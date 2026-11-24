@@ -89,6 +89,7 @@ describe('API Key Storage, Status Matrix, Validation & Expiry Detection', () => 
       .map((r) => r.slug)
       .sort();
     expect(keylessProviders).toEqual([
+      'cloudflare',
       'kilo',
       'nvidia',
       'opencode',

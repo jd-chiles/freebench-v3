@@ -42,6 +42,7 @@ export const KEYLESS_CATALOG_PROVIDERS: ReadonlySet<ProviderSlug> = new Set([
   'pollinations',
   'nvidia',
   'sambanova',
+  'cloudflare',
 ]);
 
 /**
@@ -51,18 +52,18 @@ export const PROVIDER_KEY_SPECS: ReadonlyArray<ProviderKeySpec> = [
   { slug: 'groq', tier: 1, envVars: ['GROQ_API_KEY'], catalogMode: 'keyed' },
   { slug: 'google', tier: 1, envVars: ['GOOGLE_AI_API_KEY'], catalogMode: 'keyed' },
   { slug: 'mistral', tier: 1, envVars: ['MISTRAL_API_KEY'], catalogMode: 'keyed' },
-  {
-    slug: 'cloudflare',
-    tier: 1,
-    envVars: ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'],
-    catalogMode: 'keyed',
-    note: 'Requires both Cloudflare Account ID and Workers AI API Token',
-  },
   { slug: 'cohere', tier: 2, envVars: ['COHERE_API_KEY'], catalogMode: 'keyed' },
   { slug: 'chutes', tier: 2, envVars: ['CHUTES_API_KEY'], catalogMode: 'keyed' },
   { slug: 'siliconflow', tier: 2, envVars: ['SILICONFLOW_API_KEY'], catalogMode: 'keyed' },
   { slug: 'zai', tier: 2, envVars: ['ZAI_API_KEY'], catalogMode: 'keyed' },
   { slug: 'cerebras', tier: 3, envVars: ['CEREBRAS_API_KEY'], catalogMode: 'keyed' },
+  {
+    slug: 'cloudflare',
+    tier: 3,
+    envVars: ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'],
+    catalogMode: 'keyless',
+    note: 'Catalog is keyless (developers.cloudflare.com); token enables canary probes & API search',
+  },
   {
     slug: 'sambanova',
     tier: 3,

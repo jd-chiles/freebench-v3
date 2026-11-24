@@ -261,6 +261,7 @@ describe('Provider Pollers', () => {
             properties: [
               { property_id: 'context_window', value: '128000' },
               { property_id: 'function_calling', value: 'true' },
+              { property_id: 'price', value: [{ currency: 'USD', price: 0.25 }] },
             ],
           },
           {
@@ -271,6 +272,10 @@ describe('Provider Pollers', () => {
             name: '@cf/legacy/deprecated-model',
             source: 'hosted',
             properties: [{ property_id: 'beta', value: 'deprecated' }],
+          },
+          {
+            name: '@cf/meta/llama-guard-3-8b',
+            source: 'hosted',
           },
         ],
       });
@@ -285,6 +290,38 @@ describe('Provider Pollers', () => {
       context_window: 128000,
       supports_tools: true,
       trains_on_data: false,
+      tier_type: 'always_free',
+    });
+  });
+
+  it('pollCloudflare falls back to keyless public catalog HTML when credentials are unset', async () => {
+    delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    delete process.env.CLOUDFLARE_API_TOKEN;
+
+    const sampleHtml = `
+      <div data-models-cell data-facet-providers="cloudflare-hosted" data-model-id="@cf/deepseek-ai/deepseek-v4.1-flash-1017" data-model-label="deepseek-v4.1-flash-1017" data-model-task="Text Generation" data-model-context="1048576" data-facet-capabilities="Function calling|Vision|Zero data retention" data-model-tags="" data-model-zdr="Yes"></div>
+      <div data-models-cell data-facet-providers="cloudflare-hosted" data-model-id="@cf/baai/bge-m3" data-model-label="bge-m3" data-model-task="Text Embeddings" data-model-context="8192" data-facet-capabilities="" data-model-tags=""></div>
+      <div data-models-cell data-facet-providers="cloudflare-hosted" data-model-id="@cf/meta/llama-guard-3-8b" data-model-label="llama-guard-3-8b" data-model-task="Text Generation" data-model-context="8192" data-facet-capabilities="" data-model-tags="moderation, safety, content-filtering, guardrails"></div>
+    `;
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        expect(String(input)).toContain('developers.cloudflare.com/workers-ai/models/');
+        return new Response(sampleHtml, { status: 200 });
+      })
+    );
+
+    const result = await pollCloudflare();
+    expect(result.ok).toBe(true);
+    expect(result.models).toHaveLength(1);
+    expect(result.models[0]).toMatchObject({
+      provider_slug: 'cloudflare',
+      provider_model_id: '@cf/deepseek-ai/deepseek-v4.1-flash-1017',
+      context_window: 1048576,
+      supports_tools: true,
+      supports_vision: true,
+      zdr_available: true,
       tier_type: 'always_free',
     });
   });
