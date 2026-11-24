@@ -1,0 +1,10 @@
+{
+  "active_sponsor": null,
+  "schema_example": {
+    "name": "Sponsor Name",
+    "tagline": "Concise developer-focused value proposition.",
+    "cta_label": "Try Free",
+    "url": "https://example.com/?utm_source=freebench",
+    "badge": "Sponsored"
+  }
+}

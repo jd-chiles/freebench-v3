@@ -1,0 +1,41 @@
+{
+  "epoch": {
+    "zip_url": "https://epoch.ai/data/benchmark_data.zip",
+    "eci_filename_suffix": "eci_scores.csv",
+    "calibration_min": 80,
+    "calibration_max": 165
+  },
+  "livebench": {
+    "github_contents_api": "https://api.github.com/repos/LiveBench/livebench.github.io/contents/public",
+    "base_url": "https://raw.githubusercontent.com/LiveBench/livebench.github.io/main/public",
+    "fallback_release": "2026_06_25"
+  },
+  "bfcl": {
+    "csv_url": "https://gorilla.cs.berkeley.edu/data_overall.csv"
+  },
+  "aider": {
+    "yaml_url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml"
+  },
+  "swebench": {
+    "json_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+  },
+  "scoring": {
+    "shrinkage_lambda": 0.25,
+    "prior_mean": 50
+  },
+  "weights": {
+    "composite": {
+      "eci": 0.4,
+      "livebench": 0.35,
+      "bfcl": 0.25
+    },
+    "agentic_coding": {
+      "swebench_verified": 0.3,
+      "aider_polyglot": 0.25,
+      "livebench_coding": 0.2,
+      "bfcl_overall": 0.15,
+      "livebench_reasoning": 0.05,
+      "context_headroom": 0.05
+    }
+  }
+}

@@ -1,0 +1,444 @@
+{
+  "deepseek-r1": {
+    "display_name": "DeepSeek R1",
+    "family": "DeepSeek",
+    "parameter_count": "671B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "deepseek/deepseek-r1",
+      "deepseek/deepseek-r1:free",
+      "deepseek-ai/deepseek-r1",
+      "DeepSeek-R1"
+    ]
+  },
+  "deepseek-r1-0528": {
+    "display_name": "DeepSeek R1 0528",
+    "family": "DeepSeek",
+    "parameter_count": "671B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 163840,
+    "aliases": [
+      "deepseek/deepseek-r1-0528",
+      "deepseek/deepseek-r1-0528:free",
+      "deepseek-ai/deepseek-r1-0528",
+      "DeepSeek-R1-0528",
+      "deepseek-r1-0528"
+    ]
+  },
+  "deepseek-v3": {
+    "display_name": "DeepSeek V3",
+    "family": "DeepSeek",
+    "parameter_count": "671B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "deepseek/deepseek-chat",
+      "deepseek/deepseek-chat:free",
+      "deepseek-ai/deepseek-v3",
+      "DeepSeek-V3"
+    ]
+  },
+  "deepseek-v3-0324": {
+    "display_name": "DeepSeek V3 0324",
+    "family": "DeepSeek",
+    "parameter_count": "671B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 163840,
+    "aliases": [
+      "deepseek/deepseek-chat-v3-0324",
+      "deepseek/deepseek-chat-v3-0324:free",
+      "deepseek/deepseek-v3-0324",
+      "deepseek-ai/deepseek-v3-0324",
+      "DeepSeek-V3-0324",
+      "deepseek-chat-v3-0324"
+    ]
+  },
+  "deepseek-r1-distill-llama-70b": {
+    "display_name": "DeepSeek R1 Distill Llama 70B",
+    "family": "DeepSeek",
+    "parameter_count": "70B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "deepseek-r1-distill-llama-70b",
+      "deepseek/deepseek-r1-distill-llama-70b",
+      "deepseek/deepseek-r1-distill-llama-70b:free",
+      "deepseek-ai/deepseek-r1-distill-llama-70b",
+      "DeepSeek-R1-Distill-Llama-70B"
+    ]
+  },
+  "deepseek-r1-distill-qwen-32b": {
+    "display_name": "DeepSeek R1 Distill Qwen 32B",
+    "family": "DeepSeek",
+    "parameter_count": "32B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "deepseek-r1-distill-qwen-32b",
+      "deepseek/deepseek-r1-distill-qwen-32b",
+      "deepseek/deepseek-r1-distill-qwen-32b:free",
+      "deepseek-ai/deepseek-r1-distill-qwen-32b",
+      "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+      "DeepSeek-R1-Distill-Qwen-32B"
+    ]
+  },
+  "llama-3.3-70b-instruct": {
+    "display_name": "Llama 3.3 70B Instruct",
+    "family": "Llama",
+    "parameter_count": "70B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "llama-3.3-70b-instruct",
+      "meta-llama/llama-3.3-70b-instruct",
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "llama-3.3-70b-versatile",
+      "llama3.3-70b",
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "Meta-Llama-3.3-70B-Instruct",
+      "llama-3.3-70b"
+    ]
+  },
+  "llama-3.1-8b-instruct": {
+    "display_name": "Llama 3.1 8B Instruct",
+    "family": "Llama",
+    "parameter_count": "8B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "llama-3.1-8b-instant",
+      "llama3.1-8b",
+      "meta-llama/llama-3.1-8b-instruct",
+      "meta-llama/llama-3.1-8b-instruct:free",
+      "@cf/meta/llama-3.1-8b-instruct",
+      "@cf/meta/llama-3.1-8b-instruct-fast",
+      "Meta-Llama-3.1-8B-Instruct"
+    ]
+  },
+  "llama-4-scout": {
+    "display_name": "Llama 4 Scout 17B-16E",
+    "family": "Llama",
+    "parameter_count": "109B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "meta-llama/llama-4-scout",
+      "meta-llama/llama-4-scout:free",
+      "meta-llama/llama-4-scout-17b-16e-instruct",
+      "llama-4-scout-17b-16e-instruct",
+      "@cf/meta/llama-4-scout-17b-16e-instruct",
+      "Llama-4-Scout-17B-16E-Instruct"
+    ]
+  },
+  "llama-4-maverick": {
+    "display_name": "Llama 4 Maverick 17B-128E",
+    "family": "Llama",
+    "parameter_count": "400B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "meta-llama/llama-4-maverick",
+      "meta-llama/llama-4-maverick:free",
+      "meta-llama/llama-4-maverick-17b-128e-instruct",
+      "llama-4-maverick-17b-128e-instruct",
+      "Llama-4-Maverick-17B-128E-Instruct"
+    ]
+  },
+  "qwen3-235b-a22b": {
+    "display_name": "Qwen3 235B A22B",
+    "family": "Qwen",
+    "parameter_count": "235B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "qwen/qwen3-235b-a22b",
+      "qwen/qwen3-235b-a22b:free",
+      "qwen3-235b-a22b",
+      "qwen/qwen3-235b-a22b-2507",
+      "Qwen3-235B-A22B"
+    ]
+  },
+  "qwen3-32b": {
+    "display_name": "Qwen3 32B",
+    "family": "Qwen",
+    "parameter_count": "32B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "qwen/qwen3-32b",
+      "qwen/qwen3-32b:free",
+      "qwen/qwen-3-32b",
+      "qwen3-32b",
+      "Qwen3-32B"
+    ]
+  },
+  "qwen-2.5-coder-32b-instruct": {
+    "display_name": "Qwen 2.5 Coder 32B Instruct",
+    "family": "Qwen",
+    "parameter_count": "32B",
+    "is_open_weights": true,
+    "fallback_context_window": 32768,
+    "aliases": [
+      "qwen/qwen-2.5-coder-32b-instruct",
+      "qwen/qwen-2.5-coder-32b-instruct:free",
+      "qwen/qwen2.5-coder-32b-instruct",
+      "@cf/qwen/qwen2.5-coder-32b-instruct",
+      "Qwen2.5-Coder-32B-Instruct"
+    ]
+  },
+  "qwq-32b": {
+    "display_name": "QwQ 32B",
+    "family": "Qwen",
+    "parameter_count": "32B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "qwen/qwq-32b",
+      "qwen/qwq-32b:free",
+      "@cf/qwen/qwq-32b",
+      "qwq-32b",
+      "QwQ-32B"
+    ]
+  },
+  "gemini-2.5-pro": {
+    "display_name": "Gemini 2.5 Pro",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-2.5-pro",
+      "google/gemini-2.5-pro-exp-03-25",
+      "google/gemini-2.5-pro-exp-03-25:free",
+      "gemini-2.5-pro-preview-05-06",
+      "gemini-2.5-pro-exp-03-25",
+      "Gemini 2.5 Pro"
+    ]
+  },
+  "gemini-2.5-flash": {
+    "display_name": "Gemini 2.5 Flash",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-preview-04-17",
+      "gemini-2.5-flash-preview-05-20",
+      "google/gemini-2.5-flash",
+      "Gemini 2.5 Flash"
+    ]
+  },
+  "gemini-2.5-flash-lite": {
+    "display_name": "Gemini 2.5 Flash-Lite",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-2.5-flash-lite",
+      "gemini-2.5-flash-lite-preview-06-17",
+      "Gemini 2.5 Flash-Lite"
+    ]
+  },
+  "gemini-3-flash": {
+    "display_name": "Gemini 3 Flash",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-3-flash",
+      "gemini-3-flash-preview",
+      "Gemini 3 Flash"
+    ]
+  },
+  "gemini-3.5-flash-lite": {
+    "display_name": "Gemini 3.5 Flash-Lite",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-3.5-flash-lite",
+      "Gemini 3.5 Flash-Lite"
+    ]
+  },
+  "gemini-3.8-flash": {
+    "display_name": "Gemini 3.8 Flash",
+    "family": "Gemini",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1048576,
+    "aliases": [
+      "gemini-3.8-flash",
+      "Gemini 3.8 Flash"
+    ]
+  },
+  "gemma-3-27b-it": {
+    "display_name": "Gemma 3 27B IT",
+    "family": "Gemma",
+    "parameter_count": "27B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "gemma-3-27b-it",
+      "google/gemma-3-27b-it",
+      "google/gemma-3-27b-it:free",
+      "Gemma-3-27B-IT"
+    ]
+  },
+  "gemma-3-12b-it": {
+    "display_name": "Gemma 3 12B IT",
+    "family": "Gemma",
+    "parameter_count": "12B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "gemma-3-12b-it",
+      "google/gemma-3-12b-it",
+      "google/gemma-3-12b-it:free",
+      "@cf/google/gemma-3-12b-it",
+      "Gemma-3-12B-IT"
+    ]
+  },
+  "mistral-small-3.1-24b": {
+    "display_name": "Mistral Small 3.1 24B",
+    "family": "Mistral",
+    "parameter_count": "24B",
+    "is_open_weights": true,
+    "fallback_context_window": 128000,
+    "aliases": [
+      "mistralai/mistral-small-3.1-24b-instruct",
+      "mistralai/mistral-small-3.1-24b-instruct:free",
+      "mistral-small-2503",
+      "@cf/mistralai/mistral-small-3.1-24b-instruct",
+      "Mistral-Small-3.1-24B-Instruct-2503"
+    ]
+  },
+  "mistral-large-2": {
+    "display_name": "Mistral Large 2",
+    "family": "Mistral",
+    "parameter_count": "123B",
+    "is_open_weights": false,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "mistral-large-2411",
+      "mistralai/mistral-large-2411",
+      "Mistral-Large-2411"
+    ]
+  },
+  "codestral-2501": {
+    "display_name": "Codestral 25.01",
+    "family": "Mistral",
+    "parameter_count": "22B",
+    "is_open_weights": false,
+    "fallback_context_window": 262144,
+    "aliases": [
+      "codestral-2501",
+      "codestral-2508",
+      "Codestral-25.01"
+    ]
+  },
+  "devstral-small": {
+    "display_name": "Devstral Small",
+    "family": "Mistral",
+    "parameter_count": "24B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "mistralai/devstral-small",
+      "mistralai/devstral-small:free",
+      "devstral-small-2505",
+      "devstral-small-2507",
+      "Devstral-Small-2505"
+    ]
+  },
+  "gpt-oss-120b": {
+    "display_name": "GPT-OSS 120B",
+    "family": "OpenAI OSS",
+    "parameter_count": "120B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-120b:free",
+      "gpt-oss-120b",
+      "@cf/openai/gpt-oss-120b"
+    ]
+  },
+  "gpt-oss-20b": {
+    "display_name": "GPT-OSS 20B",
+    "family": "OpenAI OSS",
+    "parameter_count": "20B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "openai/gpt-oss-20b",
+      "openai/gpt-oss-20b:free",
+      "gpt-oss-20b",
+      "@cf/openai/gpt-oss-20b"
+    ]
+  },
+  "kimi-k2": {
+    "display_name": "Kimi K2 Instruct",
+    "family": "Kimi",
+    "parameter_count": "1T MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "moonshotai/kimi-k2",
+      "moonshotai/kimi-k2:free",
+      "moonshotai/kimi-k2-instruct",
+      "kimi-k2-instruct",
+      "Kimi-K2-Instruct"
+    ]
+  },
+  "glm-4.5": {
+    "display_name": "GLM-4.5",
+    "family": "GLM",
+    "parameter_count": "355B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "z-ai/glm-4.5",
+      "GLM-4.5"
+    ]
+  },
+  "glm-4.5-air": {
+    "display_name": "GLM-4.5 Air",
+    "family": "GLM",
+    "parameter_count": "106B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "z-ai/glm-4.5-air",
+      "z-ai/glm-4.5-air:free",
+      "GLM-4.5-Air"
+    ]
+  },
+  "glm-4.5-flash": {
+    "display_name": "GLM-4.5 Flash",
+    "family": "GLM",
+    "parameter_count": "Flash",
+    "is_open_weights": false,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "glm-4.5-flash",
+      "GLM-4.5-Flash"
+    ]
+  },
+  "command-a-03-2025": {
+    "display_name": "Cohere Command A",
+    "family": "Command",
+    "parameter_count": "111B",
+    "is_open_weights": true,
+    "fallback_context_window": 256000,
+    "aliases": [
+      "command-a-03-2025",
+      "cohere/command-a",
+      "Command-A-03-2025"
+    ]
+  }
+}

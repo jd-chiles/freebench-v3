@@ -1,0 +1,162 @@
+{
+  "github_releases": [
+    {
+      "id": "opencode-releases",
+      "name": "OpenCode Releases",
+      "repo": "anomalyco/opencode",
+      "tags": ["agent", "coding", "opencode"]
+    },
+    {
+      "id": "hermes-agent-releases",
+      "name": "Hermes Agent Releases",
+      "repo": "NousResearch/hermes-agent",
+      "tags": ["agent", "hermes", "nous"]
+    },
+    {
+      "id": "codebuff-releases",
+      "name": "Codebuff / Freebuff Releases",
+      "repo": "CodebuffAI/codebuff",
+      "tags": ["agent", "freebuff", "coding"]
+    },
+    {
+      "id": "kilocode-releases",
+      "name": "Kilo Code Releases",
+      "repo": "Kilo-Org/kilocode",
+      "tags": ["agent", "kilocode", "always-free"]
+    },
+    {
+      "id": "cline-releases",
+      "name": "Cline Releases",
+      "repo": "cline/cline",
+      "tags": ["agent", "coding"]
+    },
+    {
+      "id": "aider-releases",
+      "name": "Aider Releases",
+      "repo": "Aider-AI/aider",
+      "tags": ["agent", "coding"]
+    },
+    {
+      "id": "ollama-releases",
+      "name": "Ollama Model Runtime Releases",
+      "repo": "ollama/ollama",
+      "tags": ["open-weights", "runtime"]
+    }
+  ],
+  "bluesky_accounts": [
+    {
+      "id": "bsky-simonw",
+      "name": "Simon Willison",
+      "handle": "simonwillison.net",
+      "tags": ["kol", "models", "benchmarks"],
+      "include_keywords": ["model", "llm", "free", "gemini", "claude", "gpt", "qwen", "deepseek", "llama", "mistral", "open", "release"]
+    },
+    {
+      "id": "bsky-ollama",
+      "name": "Ollama",
+      "handle": "ollama.com",
+      "tags": ["open-weights", "models"],
+      "include_keywords": ["model", "release", "new", "qwen", "llama", "deepseek", "gemma", "mistral"]
+    },
+    {
+      "id": "bsky-huggingface",
+      "name": "Hugging Face",
+      "handle": "huggingface.co",
+      "tags": ["open-weights", "models"],
+      "include_keywords": ["release", "open", "model", "benchmark", "weights", "free"]
+    },
+    {
+      "id": "bsky-opencode",
+      "name": "OpenCode",
+      "handle": "opencode.ai",
+      "tags": ["agent", "opencode"],
+      "include_keywords": ["model", "free", "release", "zen", "update", "agent"]
+    }
+  ],
+  "rss_feeds": [
+    {
+      "id": "rss-simonw-ai",
+      "name": "Simon Willison (AI Tag)",
+      "url": "https://simonwillison.net/tags/ai/atom/",
+      "source_type": "kol",
+      "tags": ["kol", "models", "analysis"]
+    },
+    {
+      "id": "rss-hf-blog",
+      "name": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "source_type": "provider_news",
+      "tags": ["open-weights", "models"]
+    }
+  ],
+  "huggingface_trending": {
+    "enabled": true,
+    "limit": 8
+  },
+  "x_list_url": null,
+  "x_watchlist": [
+    {
+      "name": "thdxr (Dax Raad)",
+      "handle": "@thdxr",
+      "role": "OpenCode creator — posts new free Zen models & agent updates",
+      "tags": ["opencode", "free-models", "agent"],
+      "profile_url": "https://x.com/thdxr"
+    },
+    {
+      "name": "OpenCode",
+      "handle": "@opencode",
+      "role": "Official OpenCode updates, free model drops, and provider support",
+      "tags": ["opencode", "agent"],
+      "profile_url": "https://x.com/opencode"
+    },
+    {
+      "name": "Nous Research",
+      "handle": "@NousResearch",
+      "role": "Hermes Agent, Nous Portal free drops, and open-weights releases",
+      "tags": ["hermes", "nous-portal", "open-weights"],
+      "profile_url": "https://x.com/NousResearch"
+    },
+    {
+      "name": "Teknium",
+      "handle": "@Teknium1",
+      "role": "Nous Research / Hermes Agent model tuning & portal updates",
+      "tags": ["hermes", "nous-portal"],
+      "profile_url": "https://x.com/Teknium1"
+    },
+    {
+      "name": "OpenClaw",
+      "handle": "@openclaw",
+      "role": "OpenClaw autonomous agent updates and model routing tips",
+      "tags": ["openclaw", "agent"],
+      "profile_url": "https://x.com/openclaw"
+    },
+    {
+      "name": "Codebuff / Freebuff",
+      "handle": "@CodebuffAI",
+      "role": "Freebuff free agentic coding updates and model benchmarks",
+      "tags": ["freebuff", "coding"],
+      "profile_url": "https://x.com/CodebuffAI"
+    },
+    {
+      "name": "OpenAI / Codex Rate Limits & Resets",
+      "handle": "@OpenAIDevs",
+      "role": "Codex CLI / API quota resets, promos, and model announcements",
+      "tags": ["codex", "resets", "quotas"],
+      "profile_url": "https://x.com/OpenAIDevs"
+    },
+    {
+      "name": "OpenRouter",
+      "handle": "@OpenRouterAI",
+      "role": "Instant announcements whenever new :free endpoints go live",
+      "tags": ["openrouter", "free-models"],
+      "profile_url": "https://x.com/OpenRouterAI"
+    },
+    {
+      "name": "Kilo Code",
+      "handle": "@kilocode",
+      "role": "Updates on always-free built-in coding models and agent tooling",
+      "tags": ["kilocode", "always-free", "coding"],
+      "profile_url": "https://x.com/kilocode"
+    }
+  ]
+}
