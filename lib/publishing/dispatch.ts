@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { fetchJsonWithTimeout } from '@/lib/providers/http';
-import type { AvailabilityEventRecord } from '@/lib/supabase/types';
+import type { AvailabilityEventRecord, ProviderSlug } from '@/lib/supabase/types';
 
 export type PendingAvailabilityEvent = Omit<AvailabilityEventRecord, 'id' | 'detected_at'>;
+
+export interface KeyExpiredAlert {
+  provider: ProviderSlug;
+  envVar: string;
+  error: string;
+}
 
 const BlueskySessionSchema = z.object({
   did: z.string(),
@@ -143,6 +149,36 @@ export async function dispatchAvailabilityEvents(
   if (bskyHandle && bskyPassword) {
     const ok = await postToBluesky(bskyHandle, bskyPassword, events);
     if (ok) deliveredChannels.push('bluesky');
+  }
+
+  return deliveredChannels;
+}
+
+/**
+ * Sends private ops alerts to configured Discord/Slack webhooks when a provider poller fails
+ * with HTTP 401/403 so expired or revoked API keys can be rotated quickly.
+ */
+export async function dispatchKeyExpiredAlerts(alerts: KeyExpiredAlert[]): Promise<string[]> {
+  if (alerts.length === 0) return [];
+
+  const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench.dev').replace(/\/$/, '');
+  const lines = alerts.map(
+    (item) => `- [KEY EXPIRED] **${item.provider}** (\`${item.envVar}\`): ${item.error}`
+  );
+  const message = `FreeBench Ops Alert (Key Rotation Needed):\n${lines.join('\n')}\n\nStatus: ${siteUrl}/status`;
+
+  const deliveredChannels: string[] = [];
+  const discordUrl = process.env.DISCORD_WEBHOOK_URL?.trim();
+  const slackUrl = process.env.SLACK_WEBHOOK_URL?.trim();
+
+  if (discordUrl) {
+    const ok = await postWebhookJson(discordUrl, { content: message });
+    if (ok) deliveredChannels.push('discord');
+  }
+
+  if (slackUrl) {
+    const ok = await postWebhookJson(slackUrl, { text: message });
+    if (ok) deliveredChannels.push('slack');
   }
 
   return deliveredChannels;

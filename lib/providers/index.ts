@@ -75,3 +75,31 @@ export async function pollAllProviders(): Promise<ProviderPollResult[]> {
     };
   });
 }
+
+/**
+ * Executes a single provider poller by slug with standardized error handling.
+ */
+export async function pollProviderBySlug(slug: ProviderSlug): Promise<ProviderPollResult> {
+  const entry = POLLER_ENTRIES.find((item) => item.slug === slug);
+  if (!entry) {
+    return {
+      provider_slug: slug,
+      ok: false,
+      models: [],
+      error: `Unknown provider slug: ${slug}`,
+      duration_ms: 0,
+    };
+  }
+
+  try {
+    return await entry.run();
+  } catch (error) {
+    return {
+      provider_slug: slug,
+      ok: false,
+      models: [],
+      error: formatErrorMessage(error),
+      duration_ms: 0,
+    };
+  }
+}

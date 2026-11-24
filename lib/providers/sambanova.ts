@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { fetchJsonWithTimeout, formatErrorMessage, missingEnvResult } from './http';
+import { fetchJsonWithTimeout, formatErrorMessage } from './http';
 import { getProvidersConfig, type DiscoveredFreeModel, type ProviderPollResult } from './types';
 
 const SAMBANOVA_NON_CHAT_REGEX = /whisper|audio|embed/i;
@@ -14,20 +14,17 @@ const SambaNovaResponseSchema = z.object({
 });
 
 /**
- * Polls SambaNova Cloud `/v1/models` and excludes audio/embedding endpoints.
+ * Polls SambaNova Cloud's public `/v1/models` catalog (works keyless; attaches Bearer token if `SAMBANOVA_API_KEY` is set)
+ * and excludes audio/embedding endpoints.
  */
 export async function pollSambaNova(): Promise<ProviderPollResult> {
   const apiKey = process.env.SAMBANOVA_API_KEY?.trim();
-  if (!apiKey) {
-    return missingEnvResult('sambanova', 'SAMBANOVA_API_KEY');
-  }
-
   const startedAt = Date.now();
   const config = getProvidersConfig().sambanova;
 
   try {
     const raw = await fetchJsonWithTimeout<unknown>('https://api.sambanova.ai/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
     });
     const parsed = SambaNovaResponseSchema.parse(raw);
 

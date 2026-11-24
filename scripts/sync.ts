@@ -17,11 +17,18 @@ import {
   selectStalestProbeTargets,
 } from '@/lib/probes/canary';
 import { pollAllProviders } from '@/lib/providers';
-import { formatErrorMessage, shouldApplyDeactivation } from '@/lib/providers/http';
+import {
+  formatErrorMessage,
+  isAuthExpiredError,
+  shouldApplyDeactivation,
+  tagProviderError,
+} from '@/lib/providers/http';
 import { resolveEffectiveLimits } from '@/lib/providers/limits';
-import type { ProviderPollResult, ProviderSlug } from '@/lib/providers/types';
+import { getProvidersConfig, type ProviderPollResult, type ProviderSlug } from '@/lib/providers/types';
 import {
   dispatchAvailabilityEvents,
+  dispatchKeyExpiredAlerts,
+  type KeyExpiredAlert,
   type PendingAvailabilityEvent,
 } from '@/lib/publishing/dispatch';
 import { pollAllPulseSources } from '@/lib/pulse';
@@ -300,6 +307,7 @@ async function main(): Promise<void> {
   const syncRunId = runInsert.id as string;
 
   const pendingEvents: PendingAvailabilityEvent[] = [];
+  const keyExpiredAlerts: KeyExpiredAlert[] = [];
   let providersSucceeded = 0;
   let providersFailed = 0;
   let benchmarksUpdated = 0;
@@ -325,10 +333,20 @@ async function main(): Promise<void> {
 
       if (!shouldApplyDeactivation(result)) {
         providersFailed += 1;
+        const taggedError = tagProviderError(
+          result.error ?? 'Zero models returned; existing rows preserved'
+        );
         errorLog.push({
           provider: result.provider_slug,
-          error: result.error ?? 'Zero models returned; existing rows preserved',
+          error: taggedError,
         });
+        if (isAuthExpiredError(taggedError)) {
+          keyExpiredAlerts.push({
+            provider: result.provider_slug,
+            envVar: getProvidersConfig()[result.provider_slug].env_var,
+            error: taggedError,
+          });
+        }
         continue;
       }
 
@@ -890,6 +908,10 @@ async function main(): Promise<void> {
         }))
       );
       assertNoError(evtErr, 'availability_events insert failed');
+    }
+
+    if (keyExpiredAlerts.length > 0) {
+      await dispatchKeyExpiredAlerts(keyExpiredAlerts);
     }
 
     // 6. Free-tier storage pruning: keep 300 newest pulse_items and 90d of sync_runs

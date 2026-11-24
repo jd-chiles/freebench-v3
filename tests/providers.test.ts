@@ -213,26 +213,35 @@ describe('Provider Pollers', () => {
     expect(result.models[0]?.rpd_limit).toBe('One-time $5 credit');
   });
 
-  it('pollNvidia strips non-chat microservices', async () => {
-    process.env.NVIDIA_API_KEY = 'nvapi-test';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        jsonResponse({
-          data: [
-            { id: 'deepseek-ai/deepseek-r1' },
-            { id: 'nvidia/nv-embedqa-e5-v5' },
-            { id: 'stabilityai/sdxl-turbo' },
-            { id: 'nvidia/parakeet-ctc-1.1b' },
-          ],
-        })
-      )
-    );
+  it('pollNvidia strips non-chat microservices and works keyless when NVIDIA_API_KEY is unset', async () => {
+    delete process.env.NVIDIA_API_KEY;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      expect(headers.has('Authorization')).toBe(false);
+      return jsonResponse({
+        data: [
+          { id: 'deepseek-ai/deepseek-r1' },
+          { id: 'nvidia/nv-embedqa-e5-v5' },
+          { id: 'stabilityai/sdxl-turbo' },
+          { id: 'nvidia/parakeet-ctc-1.1b' },
+        ],
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = await pollNvidia();
     expect(result.ok).toBe(true);
     expect(result.models.map((m) => m.provider_model_id)).toEqual(['deepseek-ai/deepseek-r1']);
     expect(result.models[0]?.tier_type).toBe('trial_credit');
+
+    process.env.NVIDIA_API_KEY = 'nvapi-test';
+    const keyedMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer nvapi-test');
+      return jsonResponse({ data: [{ id: 'deepseek-ai/deepseek-r1' }] });
+    });
+    vi.stubGlobal('fetch', keyedMock);
+    const keyedResult = await pollNvidia();
+    expect(keyedResult.ok).toBe(true);
   });
 
   it('pollCloudflare uses /ai/models/search, keeps hosted models only, and drops deprecated entries', async () => {
@@ -323,18 +332,19 @@ describe('Provider Pollers', () => {
     });
   });
 
-  it('pollSambaNova filters audio/embed models', async () => {
-    process.env.SAMBANOVA_API_KEY = 'samba-test';
+  it('pollSambaNova filters audio/embed models and works keyless when SAMBANOVA_API_KEY is unset', async () => {
+    delete process.env.SAMBANOVA_API_KEY;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        jsonResponse({
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        expect(new Headers(init?.headers).has('Authorization')).toBe(false);
+        return jsonResponse({
           data: [
             { id: 'DeepSeek-R1', context_length: 131072 },
             { id: 'Whisper-Large-v3' },
           ],
-        })
-      )
+        });
+      })
     );
 
     const result = await pollSambaNova();

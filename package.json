@@ -18,6 +18,10 @@
     "sync": "tsx scripts/sync.ts",
     "sync:dry": "tsx scripts/sync.ts --dry-run",
     "sync:providers": "tsx scripts/sync.ts --providers-only --dry-run",
+    "keys": "tsx scripts/keys.ts wizard",
+    "keys:wizard": "tsx scripts/keys.ts wizard",
+    "keys:status": "tsx scripts/keys.ts status",
+    "keys:push": "tsx scripts/keys.ts push",
     "cli": "tsx bin/freebench.ts",
     "mcp": "tsx bin/freebench-mcp.ts"
   },

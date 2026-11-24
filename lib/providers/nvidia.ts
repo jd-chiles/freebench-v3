@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { fetchJsonWithTimeout, formatErrorMessage, missingEnvResult } from './http';
+import { fetchJsonWithTimeout, formatErrorMessage } from './http';
 import { getProvidersConfig, type DiscoveredFreeModel, type ProviderPollResult } from './types';
 
 const NVIDIA_NON_CHAT_REGEX =
@@ -16,20 +16,17 @@ const NvidiaResponseSchema = z.object({
 });
 
 /**
- * Polls NVIDIA NIM `/v1/models` and strips non-chat microservices (embeddings, OCR, diffusion, etc.).
+ * Polls NVIDIA NIM's public `/v1/models` catalog (works keyless; attaches Bearer token if `NVIDIA_API_KEY` is set)
+ * and strips non-chat microservices (embeddings, OCR, diffusion, etc.).
  */
 export async function pollNvidia(): Promise<ProviderPollResult> {
   const apiKey = process.env.NVIDIA_API_KEY?.trim();
-  if (!apiKey) {
-    return missingEnvResult('nvidia', 'NVIDIA_API_KEY');
-  }
-
   const startedAt = Date.now();
   const config = getProvidersConfig().nvidia;
 
   try {
     const raw = await fetchJsonWithTimeout<unknown>('https://integrate.api.nvidia.com/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
     });
     const parsed = NvidiaResponseSchema.parse(raw);
 

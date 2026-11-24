@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { UnmappedQueue } from '@/components/status/UnmappedQueue';
 import { getStatusPageData } from '@/lib/data/queries';
 import { formatRelativeTime } from '@/lib/format';
+import { isAuthExpiredError } from '@/lib/providers/http';
 import { getProvidersConfig } from '@/lib/providers/types';
 import type { ProviderSlug } from '@/lib/supabase/types';
 
@@ -52,19 +53,37 @@ export default async function StatusPage() {
             const cfg = providersConfig[slug];
             const count = providerModelCounts[slug] ?? 0;
             const latestError = latestRun?.error_log.find((e) => e.provider === slug)?.error;
+            const isKeyExpired = isAuthExpiredError(latestError);
 
             return (
               <Link
                 key={slug}
                 href={`/providers/${slug}`}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700"
+                className={`rounded-xl border p-4 transition-colors ${
+                  isKeyExpired
+                    ? 'border-rose-500/40 bg-rose-950/20 hover:border-rose-400/60'
+                    : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-zinc-100">{cfg.display_name}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-zinc-100">
+                      {cfg.display_name}
+                    </span>
+                    {isKeyExpired ? (
+                      <span className="shrink-0 rounded bg-rose-500/20 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-rose-300">
+                        KEY EXPIRED
+                      </span>
+                    ) : null}
+                  </div>
                   {latestError ? (
-                    <AlertTriangle className="h-4 w-4 text-amber-400" />
+                    <AlertTriangle
+                      className={`h-4 w-4 shrink-0 ${
+                        isKeyExpired ? 'text-rose-400' : 'text-amber-400'
+                      }`}
+                    />
                   ) : (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
                   )}
                 </div>
                 <div className="mt-2 font-mono text-xs text-zinc-300">
@@ -74,7 +93,11 @@ export default async function StatusPage() {
                   {cfg.rpm_limit} · {cfg.rpd_limit}
                 </div>
                 {latestError ? (
-                  <p className="mt-2 line-clamp-2 font-mono text-[11px] text-amber-300">
+                  <p
+                    className={`mt-2 line-clamp-2 font-mono text-[11px] ${
+                      isKeyExpired ? 'text-rose-300' : 'text-amber-300'
+                    }`}
+                  >
                     {latestError}
                   </p>
                 ) : null}

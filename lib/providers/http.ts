@@ -103,6 +103,27 @@ export function formatErrorMessage(error: unknown): string {
 }
 
 /**
+ * Detects HTTP 401/403 or explicit auth/key failure phrases in a provider error string.
+ */
+export function isAuthExpiredError(errorMessage: string | null | undefined): boolean {
+  if (!errorMessage) return false;
+  return (
+    /\bHTTP\s+(401|403)\b/i.test(errorMessage) ||
+    /\b(unauthorized|invalid[_ ]api[_ ]key|forbidden|revoked)\b/i.test(errorMessage)
+  );
+}
+
+/**
+ * Prefixes provider auth failures with `[KEY EXPIRED]` so ops alerts and `/status` highlight key rotation needs.
+ */
+export function tagProviderError(errorMessage: string): string {
+  if (errorMessage.startsWith('[KEY EXPIRED]')) {
+    return errorMessage;
+  }
+  return isAuthExpiredError(errorMessage) ? `[KEY EXPIRED] ${errorMessage}` : errorMessage;
+}
+
+/**
  * Mandatory safety predicate: never wipe/deactivate existing models on a failed or empty poll.
  */
 export function shouldApplyDeactivation(result: ProviderPollResult): boolean {
