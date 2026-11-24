@@ -203,7 +203,25 @@ export function selectBestRoute(
   }
   cloned.delete('limit');
 
-  const candidates = filterApiModels(models, cloned);
+  let candidates = filterApiModels(models, cloned);
+  if (candidates.length === 0 && cloned.has('task')) {
+    const fallbackParams = new URLSearchParams(cloned.toString());
+    fallbackParams.delete('task');
+    const requiresTools = task === 'agentic-coding' || task === 'tool-calling';
+    let relaxed = filterApiModels(models, fallbackParams);
+    if (requiresTools) {
+      const toolVerified = relaxed.filter((m) => m.supports_tools === true);
+      relaxed =
+        toolVerified.length > 0
+          ? toolVerified
+          : relaxed.filter((m) => m.supports_tools !== false);
+    }
+    candidates = relaxed.sort((a, b) => {
+      const scoreDiff = (b.freebench_score ?? -1) - (a.freebench_score ?? -1);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (b.context_window ?? 0) - (a.context_window ?? 0);
+    });
+  }
   if (candidates.length === 0) {
     return {
       task,

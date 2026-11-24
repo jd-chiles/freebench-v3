@@ -303,6 +303,34 @@
       "Gemma-3-12B-IT"
     ]
   },
+  "gemma-4-31b-it": {
+    "display_name": "Gemma 4 31B IT",
+    "family": "Gemma",
+    "parameter_count": "31B",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "gemma-4-31b-it",
+      "google/gemma-4-31b-it",
+      "google/gemma-4-31b-it:free",
+      "gemma-4-31b",
+      "Gemma 4 31B"
+    ]
+  },
+  "gemma-4-26b-a4b-it": {
+    "display_name": "Gemma 4 26B A4B IT",
+    "family": "Gemma",
+    "parameter_count": "26B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 131072,
+    "aliases": [
+      "gemma-4-26b-a4b-it",
+      "google/gemma-4-26b-a4b-it",
+      "google/gemma-4-26b-a4b-it:free",
+      "gemma-4-26b-a4b",
+      "Gemma 4 26B A4B"
+    ]
+  },
   "mistral-small-3.1-24b": {
     "display_name": "Mistral Small 3.1 24B",
     "family": "Mistral",

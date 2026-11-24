@@ -153,4 +153,31 @@ describe('Wave 3 Canary Probes, Router API, MCP, Stack Pins & Escape Hatch', () 
     // 0.55 * 0.5 + 2.19 * 0.05 = 0.275 + 0.1095 = 0.3845 -> 0.385
     expect(estimateAgent100TurnCostUsd(deepseek[0]!)).toBe(0.385);
   });
+
+  it('falls back gracefully in selectBestRoute when task subscores are unpopulated', () => {
+    const unpopulatedModels: LeaderboardModel[] = models.slice(0, 3).map((m, idx) => ({
+      ...m,
+      agentic_coding_score: null,
+      livebench_coding: null,
+      livebench_reasoning: null,
+      livebench_math: null,
+      bfcl_overall: null,
+      supports_tools: idx === 0 ? false : true,
+      freebench_score: idx === 1 ? 65 : idx === 2 ? 60 : 80,
+      context_window: idx === 1 ? 65536 : 131072,
+    }));
+
+    const route = selectBestRoute(
+      unpopulatedModels,
+      new URLSearchParams('task=agentic-coding&always_free=1&direct_api=1')
+    );
+
+    expect(route.recommended).not.toBeNull();
+    expect(route.recommended?.tier_type).toBe('always_free');
+    expect(route.recommended?.access_mode).toBe('direct_api');
+    expect(route.recommended?.canonical_id).toBe(unpopulatedModels[1]?.canonical_id);
+    expect(route.fallbacks.every((f) => f.access_mode === 'direct_api' && f.tier_type === 'always_free')).toBe(
+      true
+    );
+  });
 });
