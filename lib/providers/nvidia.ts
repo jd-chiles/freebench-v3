@@ -3,7 +3,7 @@ import { fetchJsonWithTimeout, formatErrorMessage } from './http';
 import { getProvidersConfig, type DiscoveredFreeModel, type ProviderPollResult } from './types';
 
 const NVIDIA_NON_CHAT_REGEX =
-  /embed|rerank|bge|nvclip|stable-diffusion|flux|sdxl|cosmos|reward|parse|ocr|deplot|pdf|retriever|guard|shield|speech|riva|parakeet|canary|audio|diffusion|3d|trellis|genmol|evo2|alphafold/i;
+  /embed|rerank|bge|nvclip|stable-diffusion|flux|sdxl|cosmos|reward|parse|ocr|deplot|pdf|retriever|guard|shield|speech|riva|parakeet|canary|audio|diffusion|3d|trellis|genmol|evo2|alphafold|detector|pii|content-safety|calibration|gliner/i;
 
 const NvidiaModelSchema = z.object({
   id: z.string(),

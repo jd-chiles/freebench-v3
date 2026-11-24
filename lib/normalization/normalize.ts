@@ -26,24 +26,21 @@ export interface NormalizedModelResult {
 }
 
 const KNOWN_PROVIDER_PREFIXES = [
-  '@cf/meta/',
-  '@cf/google/',
-  '@cf/qwen/',
-  '@cf/deepseek-ai/',
-  '@cf/mistralai/',
-  '@cf/openai/',
-  '@cf/',
   'models/',
   'meta-llama/',
   'meta/',
   'deepseek-ai/',
   'deepseek/',
   'mistralai/',
+  'mistral/',
   'google/',
   'qwen/',
   'openai/',
   'moonshotai/',
   'z-ai/',
+  'zai-org/',
+  'zai/',
+  'minimaxai/',
   'nvidia/',
   'cohere/',
 ];
@@ -90,6 +87,16 @@ function getLookupIndex(): Map<string, { canonicalId: string; entry: AliasEntry 
     }
   }
 
+  for (const [canonicalId, entry] of Object.entries(aliasesMap)) {
+    const candidates = [canonicalId, entry.display_name, ...entry.aliases];
+    for (const candidate of candidates) {
+      const sanitizedKey = sanitizeModelIdentifier(candidate);
+      if (sanitizedKey && !index.has(sanitizedKey)) {
+        index.set(sanitizedKey, { canonicalId, entry });
+      }
+    }
+  }
+
   cachedIndex = index;
   return index;
 }
@@ -100,6 +107,10 @@ function getLookupIndex(): Map<string, { canonicalId: string; entry: AliasEntry 
  */
 export function sanitizeModelIdentifier(rawId: string): string {
   let cleaned = rawId.trim().toLowerCase();
+
+  if (cleaned.startsWith('@cf/')) {
+    cleaned = cleaned.slice('@cf/'.length);
+  }
 
   for (const prefix of KNOWN_PROVIDER_PREFIXES) {
     if (cleaned.startsWith(prefix)) {

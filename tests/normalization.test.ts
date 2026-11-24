@@ -29,6 +29,13 @@ describe('Model Normalization & Aliasing', () => {
     expect(sanitizeModelIdentifier('nvidia/llama-3.1-nemotron-ultra-253b-v1-free')).toBe(
       'llama-3.1-nemotron-ultra-253b-v1'
     );
+    expect(normalizeModelId('@cf/zai-org/glm-5.2').canonicalId).toBe('glm-5.2');
+    expect(normalizeModelId('@cf/moonshotai/kimi-k2.6').canonicalId).toBe('kimi-k2.6');
+    expect(normalizeModelId('@cf/deepseek-ai/deepseek-v4.1-flash-1017').canonicalId).toBe(
+      'deepseek-v4.1-flash'
+    );
+    expect(normalizeModelId('Gemini 2.5 Pro (Jun 2025)').canonicalId).toBe('gemini-2.5-pro');
+    expect(normalizeModelId('Qwen 3.8 27B').canonicalId).toBe('qwen3.8-27b');
   });
 
   it('has zero duplicate sanitized aliases in config/aliases.json', () => {
