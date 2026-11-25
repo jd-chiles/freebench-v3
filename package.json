@@ -29,6 +29,9 @@
     "mcp": "tsx bin/freebench-mcp.ts"
   },
   "dependencies": {
+    "@langfuse/otel": "^6.1.1",
+    "@langfuse/tracing": "^6.1.1",
+    "@opentelemetry/sdk-node": "^0.223.2",
     "@supabase/supabase-js": "^2.49.1",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
