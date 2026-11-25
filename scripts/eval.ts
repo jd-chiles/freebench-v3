@@ -9,6 +9,7 @@ import { FB_EVAL_SUITE_VERSION, type ModelEvalSummary } from '@/lib/evals/types'
 import { parseEnvFile } from '@/lib/keys/manager';
 import { shutdownLangfuseTracing } from '@/lib/evals/langfuse';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import type { LeaderboardModel, ProviderOffering, ProviderSlug } from '@/lib/supabase/types';
 
@@ -150,10 +151,7 @@ async function fetchLiveModels(): Promise<LeaderboardModel[]> {
     return (data ?? []) as LeaderboardModel[];
   }
 
-  const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench-v3.vercel.app').replace(
-    /\/$/,
-    ''
-  );
+  const siteUrl = getSiteUrl();
   const res = await fetch(`${siteUrl}/api/v1/models`, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) {
     throw new Error(`Failed fetching ${siteUrl}/api/v1/models (HTTP ${res.status})`);
@@ -293,7 +291,7 @@ async function persistEvalSummaries(summaries: ModelEvalSummary[]): Promise<void
         Authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify({ canonicalIds: summaries.map((s) => s.canonicalId) }),
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 

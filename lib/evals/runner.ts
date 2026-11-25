@@ -189,7 +189,7 @@ function buildCompletionRequest(
     headers.Authorization = `Bearer ${apiKey}`;
   }
   if (target.provider_slug === 'openrouter') {
-    headers['HTTP-Referer'] = 'https://freebench.dev';
+    headers['HTTP-Referer'] = 'https://freebench.org';
     headers['X-Title'] = 'FreeBench';
   }
 
@@ -231,12 +231,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseRetryAfterMs(headers: Headers): number {
+function parseRetryAfterMs(headers: Headers, bodyText: string = ''): number {
   const raw = headers.get('retry-after');
-  if (!raw) return 2000;
-  const secs = Number(raw);
-  if (Number.isFinite(secs) && secs > 0) {
-    return Math.min(15_000, Math.max(1000, Math.round(secs * 1000)));
+  if (raw) {
+    const secs = Number(raw);
+    if (Number.isFinite(secs) && secs > 0) {
+      return Math.min(35_000, Math.max(1000, Math.round(secs * 1000) + 250));
+    }
+  }
+  const bodyMatch = bodyText.match(/try again in\s+(\d+(?:\.\d+)?)\s*(ms|s)\b/i);
+  if (bodyMatch?.[1] && bodyMatch?.[2]) {
+    const val = Number(bodyMatch[1]);
+    if (Number.isFinite(val) && val > 0) {
+      const ms = bodyMatch[2].toLowerCase() === 'ms' ? Math.round(val) : Math.round(val * 1000);
+      return Math.min(35_000, Math.max(1000, ms + 300));
+    }
   }
   return 2000;
 }
@@ -261,7 +270,7 @@ export async function callModelMessages(
     metadata: { providerSlug: target.provider_slug, ...traceMetadata },
   });
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const startedAt = Date.now();
@@ -270,9 +279,9 @@ export async function callModelMessages(
       const res = await fetch(req.url, { ...req.init, signal: controller.signal });
       const latencyMs = Date.now() - startedAt;
 
-      if ((res.status === 429 || res.status === 503) && attempt < 2) {
-        const waitMs = parseRetryAfterMs(res.headers);
-        await res.body?.cancel().catch(() => {});
+      if ((res.status === 429 || res.status === 503) && attempt < 3) {
+        const bodyText = await res.text().catch(() => '');
+        const waitMs = parseRetryAfterMs(res.headers, bodyText);
         await sleep(waitMs);
         continue;
       }
@@ -358,7 +367,15 @@ export async function evaluateModel(
   }
 ): Promise<ModelEvalSummary> {
   const baseDelay = options.delayMs ?? 400;
-  const delayMs = Math.max(baseDelay, target.provider_slug === 'mistral' ? 1200 : 0);
+  const providerMinDelay =
+    options.delayMs === 0
+      ? 0
+      : target.provider_slug === 'groq'
+        ? 2500
+        : target.provider_slug === 'mistral'
+          ? 1200
+          : 0;
+  const delayMs = Math.max(baseDelay, providerMinDelay);
   const env = options.env ?? process.env;
   const timeoutMs = options.timeoutMs ?? 45_000;
   const promptResults: PromptRunResult[] = [];

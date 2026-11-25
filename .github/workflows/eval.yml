@@ -17,7 +17,7 @@ on:
 jobs:
   fb-eval:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,9 +44,12 @@ jobs:
           SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
         run: |
           if [ "${{ github.event.inputs.mode }}" = "calibrate" ]; then
-            npx tsx scripts/eval.ts --calibrate --limit=${{ github.event.inputs.limit || '6' }} --write
+            npx tsx scripts/eval.ts --calibrate --limit=${{ github.event.inputs.limit || '6' }} --delay=1500 --write
           else
-            npx tsx scripts/eval.ts --unscored --limit=${{ github.event.inputs.limit || '3' }} --write
+            npx tsx scripts/eval.ts --unscored --limit=${{ github.event.inputs.limit || '3' }} --delay=1500 --write
           fi
