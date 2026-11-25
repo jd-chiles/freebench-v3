@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dedupePulseItemsByUrl } from '@/lib/pulse';
 import { filterBlueskyFeed } from '@/lib/pulse/bluesky';
 import { parseFeedXml } from '@/lib/pulse/rss';
 import { generateProviderSnippets } from '@/lib/snippets/generator';
@@ -123,5 +124,17 @@ describe('Pulse Aggregator & Snippet Generator', () => {
     expect(cfSnippets.find((s) => s.id === 'opencode')?.code).toContain(
       '<YOUR_CLOUDFLARE_ACCOUNT_ID>'
     );
+  });
+
+  it('deduplicates pulse items by URL while preserving latest entry', () => {
+    const deduped = dedupePulseItemsByUrl([
+      { url: 'https://freebench.org/models/a?event=model_dropped', title: 'first' },
+      { url: 'https://freebench.org/models/b?event=model_added', title: 'other' },
+      { url: 'https://freebench.org/models/a?event=model_dropped', title: 'second' },
+    ]);
+    expect(deduped).toEqual([
+      { url: 'https://freebench.org/models/a?event=model_dropped', title: 'second' },
+      { url: 'https://freebench.org/models/b?event=model_added', title: 'other' },
+    ]);
   });
 });

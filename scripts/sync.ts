@@ -35,7 +35,7 @@ import {
   type KeyExpiredAlert,
   type PendingAvailabilityEvent,
 } from '@/lib/publishing/dispatch';
-import { pollAllPulseSources } from '@/lib/pulse';
+import { dedupePulseItemsByUrl, pollAllPulseSources } from '@/lib/pulse';
 import {
   computeAgenticCodingScore,
   computeCohortCompositeScores,
@@ -180,7 +180,7 @@ async function getStaleBenchmarkSources(): Promise<BenchmarkSource[]> {
 async function pollSelectedBenchmarks(sources: BenchmarkSource[]): Promise<BenchmarkPollResult[]> {
   if (sources.length === 0) return [];
 
-  const runners: Record<BenchmarkSource, () => Promise<BenchmarkPollResult>> = {
+  const runners: Partial<Record<BenchmarkSource, () => Promise<BenchmarkPollResult>>> = {
     epoch: pollEpochBenchmarks,
     livebench: pollLiveBench,
     bfcl: pollBfcl,
@@ -188,7 +188,19 @@ async function pollSelectedBenchmarks(sources: BenchmarkSource[]): Promise<Bench
     swebench: pollSweBenchVerified,
   };
 
-  const settled = await Promise.allSettled(sources.map((source) => runners[source]()));
+  const settled = await Promise.allSettled(
+    sources.map((source) => {
+      const runner = runners[source];
+      return runner
+        ? runner()
+        : Promise.resolve<BenchmarkPollResult>({
+            source,
+            ok: true,
+            observations: [],
+            duration_ms: 0,
+          });
+    })
+  );
   return settled.map((outcome, idx) => {
     const source = sources[idx] ?? 'epoch';
     if (outcome.status === 'fulfilled') return outcome.value;
@@ -745,6 +757,11 @@ async function main(): Promise<void> {
         freebench_score: composite.freebenchScore,
         agentic_coding_score: agenticScore,
         benchmark_coverage: composite.coverageCount,
+        fb_eval_score: mScores.fb_eval_score ?? null,
+        fb_eval_coding: mScores.fb_eval_coding ?? null,
+        fb_eval_tools: mScores.fb_eval_tools ?? null,
+        fb_eval_if: mScores.fb_eval_if ?? null,
+        fb_eval_reasoning: mScores.fb_eval_reasoning ?? null,
       });
     }
 
@@ -880,11 +897,14 @@ async function main(): Promise<void> {
     const pulseRows = [...pulseAggregate.items];
     const siteUrl = getSiteUrl();
     for (const evt of pendingEvents.slice(0, 5)) {
+      const modelQuery = evt.provider_model_id
+        ? `&model=${encodeURIComponent(evt.provider_model_id)}`
+        : '';
       const url = `${siteUrl}/models/${encodeURIComponent(
         evt.canonical_id
       )}?event=${encodeURIComponent(evt.event_type)}&provider=${encodeURIComponent(
         evt.provider_slug ?? 'overall'
-      )}`;
+      )}${modelQuery}`;
       pulseRows.push({
         source_id: 'freebench-radar',
         source_name: 'FreeBench Radar',
@@ -898,12 +918,13 @@ async function main(): Promise<void> {
       });
     }
 
-    if (pulseRows.length > 0) {
+    const dedupedPulseRows = dedupePulseItemsByUrl(pulseRows);
+    if (dedupedPulseRows.length > 0) {
       const { error: pulseErr } = await supabase
         .from('pulse_items')
-        .upsert(pulseRows, { onConflict: 'url' });
+        .upsert(dedupedPulseRows, { onConflict: 'url' });
       assertNoError(pulseErr, 'pulse_items upsert failed');
-      pulseItemsAdded = pulseRows.length;
+      pulseItemsAdded = dedupedPulseRows.length;
     }
 
     // 5. Persist availability events & dispatch webhooks
