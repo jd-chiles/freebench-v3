@@ -220,6 +220,18 @@ export function ModelDetailDrawer({
                 </div>
               </div>
             ) : null}
+            {typeof model.fb_eval_score === 'number' ? (
+              <div className="col-span-2 rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 sm:col-span-3">
+                <div className="flex items-center justify-between text-[11px] text-violet-200">
+                  <span>FB-Eval {model.fb_eval_version ?? 'v1'} (Deterministic Self-Eval)</span>
+                  <span className="font-mono font-semibold">{model.fb_eval_score.toFixed(1)}</span>
+                </div>
+                <div className="mt-1.5 font-mono text-[11px] text-zinc-300">
+                  Code {formatScore(model.fb_eval_coding)} · Tools {formatScore(model.fb_eval_tools)} ·
+                  IFEval {formatScore(model.fb_eval_if)} · Logic {formatScore(model.fb_eval_reasoning)}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 

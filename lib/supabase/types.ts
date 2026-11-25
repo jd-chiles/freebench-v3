@@ -69,6 +69,13 @@ export interface LeaderboardModel {
   freebench_score: number | null;
   agentic_coding_score: number | null;
   benchmark_coverage: number;
+  fb_eval_score?: number | null;
+  fb_eval_coding?: number | null;
+  fb_eval_tools?: number | null;
+  fb_eval_if?: number | null;
+  fb_eval_reasoning?: number | null;
+  fb_eval_version?: string | null;
+  fb_eval_measured_at?: string | null;
   updated_at: string;
   active_provider_count: number;
   providers: ProviderOffering[];

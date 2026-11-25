@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import benchmarksRaw from '@/config/benchmarks.json';
 
-export type BenchmarkSource = 'epoch' | 'livebench' | 'bfcl' | 'aider' | 'swebench';
+export type BenchmarkSource =
+  | 'epoch'
+  | 'livebench'
+  | 'bfcl'
+  | 'aider'
+  | 'swebench'
+  | 'freebench_eval';
 
 export type BenchmarkMetricKey =
   | 'eci_score'
@@ -13,7 +19,12 @@ export type BenchmarkMetricKey =
   | 'livebench_data'
   | 'bfcl_overall'
   | 'aider_polyglot'
-  | 'swebench_verified';
+  | 'swebench_verified'
+  | 'fb_eval_score'
+  | 'fb_eval_coding'
+  | 'fb_eval_tools'
+  | 'fb_eval_if'
+  | 'fb_eval_reasoning';
 
 export interface BenchmarkObservation {
   source: BenchmarkSource;

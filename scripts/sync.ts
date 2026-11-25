@@ -176,7 +176,7 @@ async function getStaleBenchmarkSources(): Promise<BenchmarkSource[]> {
 async function pollSelectedBenchmarks(sources: BenchmarkSource[]): Promise<BenchmarkPollResult[]> {
   if (sources.length === 0) return [];
 
-  const runners: Record<BenchmarkSource, () => Promise<BenchmarkPollResult>> = {
+  const runners: Partial<Record<BenchmarkSource, () => Promise<BenchmarkPollResult>>> = {
     epoch: pollEpochBenchmarks,
     livebench: pollLiveBench,
     bfcl: pollBfcl,
@@ -184,7 +184,19 @@ async function pollSelectedBenchmarks(sources: BenchmarkSource[]): Promise<Bench
     swebench: pollSweBenchVerified,
   };
 
-  const settled = await Promise.allSettled(sources.map((source) => runners[source]()));
+  const settled = await Promise.allSettled(
+    sources.map((source) => {
+      const runner = runners[source];
+      return runner
+        ? runner()
+        : Promise.resolve<BenchmarkPollResult>({
+            source,
+            ok: true,
+            observations: [],
+            duration_ms: 0,
+          });
+    })
+  );
   return settled.map((outcome, idx) => {
     const source = sources[idx] ?? 'epoch';
     if (outcome.status === 'fulfilled') return outcome.value;
@@ -740,6 +752,11 @@ async function main(): Promise<void> {
         freebench_score: composite.freebenchScore,
         agentic_coding_score: agenticScore,
         benchmark_coverage: composite.coverageCount,
+        fb_eval_score: mScores.fb_eval_score ?? null,
+        fb_eval_coding: mScores.fb_eval_coding ?? null,
+        fb_eval_tools: mScores.fb_eval_tools ?? null,
+        fb_eval_if: mScores.fb_eval_if ?? null,
+        fb_eval_reasoning: mScores.fb_eval_reasoning ?? null,
       });
     }
 

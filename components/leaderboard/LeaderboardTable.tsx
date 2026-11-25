@@ -224,6 +224,12 @@ export function LeaderboardTable({
                   <ScoreBar value={model.bfcl_overall} accent="amber" />
                 </div>
               </div>
+              {typeof model.fb_eval_score === 'number' ? (
+                <div className="flex items-center justify-between rounded-md border border-violet-500/25 bg-violet-500/10 px-2.5 py-1 font-mono text-[11px] text-violet-200">
+                  <span>FB-Eval {model.fb_eval_version ?? 'v1'}</span>
+                  <span>{model.fb_eval_score.toFixed(1)}</span>
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-1.5">
                 {sortedProviders.slice(0, 3).map((offering) => (
@@ -292,6 +298,9 @@ export function LeaderboardTable({
               </th>
               <th className="px-3 py-3" aria-sort={getAriaSort('bfcl_overall')}>
                 {renderSortHeader('BFCL', 'bfcl_overall')}
+              </th>
+              <th className="px-3 py-3" aria-sort={getAriaSort('fb_eval_score')}>
+                {renderSortHeader('FB-Eval', 'fb_eval_score')}
               </th>
               <th className="px-3 py-3" aria-sort={getAriaSort('context_window')}>
                 {renderSortHeader('Context', 'context_window')}
@@ -394,6 +403,19 @@ export function LeaderboardTable({
 
                   <td className="px-3 py-3">
                     <ScoreBar value={model.bfcl_overall} accent="amber" />
+                  </td>
+
+                  <td className="px-3 py-3 font-mono text-xs tabular-nums">
+                    {typeof model.fb_eval_score === 'number' ? (
+                      <span
+                        title={`FB-Eval ${model.fb_eval_version ?? 'v1'} (Self-Eval): Code ${model.fb_eval_coding?.toFixed(0) ?? '—'} · Tools ${model.fb_eval_tools?.toFixed(0) ?? '—'} · IFEval ${model.fb_eval_if?.toFixed(0) ?? '—'} · Logic ${model.fb_eval_reasoning?.toFixed(0) ?? '—'}`}
+                        className="inline-flex items-center rounded border border-violet-500/35 bg-violet-500/15 px-1.5 py-0.5 text-[11px] font-medium text-violet-200"
+                      >
+                        {model.fb_eval_score.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500">—</span>
+                    )}
                   </td>
 
                   <td className="px-3 py-3 font-mono text-xs tabular-nums text-zinc-300">

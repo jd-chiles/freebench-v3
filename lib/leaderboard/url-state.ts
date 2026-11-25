@@ -20,6 +20,7 @@ export type SortKey =
   | 'bfcl_overall'
   | 'aider_polyglot'
   | 'swebench_verified'
+  | 'fb_eval_score'
   | 'context_window';
 
 export interface LeaderboardFilterState {
@@ -65,6 +66,7 @@ const VALID_SORT_KEYS = new Set<SortKey>([
   'bfcl_overall',
   'aider_polyglot',
   'swebench_verified',
+  'fb_eval_score',
   'context_window',
 ]);
 

@@ -22,6 +22,9 @@
     "keys:wizard": "tsx scripts/keys.ts wizard",
     "keys:status": "tsx scripts/keys.ts status",
     "keys:push": "tsx scripts/keys.ts push",
+    "eval": "tsx scripts/eval.ts",
+    "eval:dry": "tsx scripts/eval.ts --dry-run",
+    "eval:calibrate": "tsx scripts/eval.ts --calibrate",
     "cli": "tsx bin/freebench.ts",
     "mcp": "tsx bin/freebench-mcp.ts"
   },
