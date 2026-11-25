@@ -7,27 +7,50 @@ import {
 import { runSandboxedJsTests } from '@/lib/evals/sandbox';
 import { buildEvalSuite } from '@/lib/evals/suite';
 
-describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
+describe('FB-Eval v2 Frontier Suite, Multi-Turn, Sandbox & Correlation', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it('passes 28/28 reference solutions and rejects empty/malformed answers', async () => {
-    const suite = buildEvalSuite('2026-11');
-    expect(suite).toHaveLength(28);
-    expect(suite.filter((p) => p.pillar === 'coding')).toHaveLength(10);
-    expect(suite.filter((p) => p.pillar === 'tools')).toHaveLength(5);
-    expect(suite.filter((p) => p.pillar === 'if')).toHaveLength(4);
-    expect(suite.filter((p) => p.pillar === 'reasoning')).toHaveLength(9);
+  it('passes 20/20 reference solutions across multiple monthly seeds and rejects empty answers', async () => {
+    for (const seed of ['2026-11', '2026-12', '2027-01']) {
+      const suite = buildEvalSuite(seed);
+      expect(suite).toHaveLength(20);
+      expect(suite.filter((p) => p.pillar === 'coding')).toHaveLength(6);
+      expect(suite.filter((p) => p.pillar === 'tools')).toHaveLength(4);
+      expect(suite.filter((p) => p.pillar === 'if')).toHaveLength(4);
+      expect(suite.filter((p) => p.pillar === 'reasoning')).toHaveLength(6);
 
-    for (const prompt of suite) {
-      const okRes = await prompt.grade(prompt.referenceAnswer);
-      expect(okRes.passed, `Reference failed for ${prompt.id}: ${okRes.detail}`).toBe(true);
-      expect(okRes.score).toBe(1);
+      for (const prompt of suite) {
+        if (prompt.runMultiTurn && prompt.referenceTurns) {
+          let turnIdx = 0;
+          const turns = prompt.referenceTurns;
+          const okMulti = await prompt.runMultiTurn(async () => {
+            const text = turns[turnIdx] ?? '';
+            turnIdx += 1;
+            return { text, latencyMs: 1 };
+          });
+          expect(
+            okMulti.grade.passed,
+            `Multi-turn ref failed for ${prompt.id} (${seed}): ${okMulti.grade.detail}`
+          ).toBe(true);
+          expect(okMulti.grade.score).toBe(1);
 
-      const badRes = await prompt.grade('');
-      expect(badRes.passed, `Empty output unexpectedly passed ${prompt.id}`).toBe(false);
+          const badMulti = await prompt.runMultiTurn(async () => ({ text: '', latencyMs: 1 }));
+          expect(badMulti.grade.passed, `Empty multi-turn passed ${prompt.id}`).toBe(false);
+        } else {
+          const okRes = await prompt.grade(prompt.referenceAnswer);
+          expect(
+            okRes.passed,
+            `Reference failed for ${prompt.id} (${seed}): ${okRes.detail}`
+          ).toBe(true);
+          expect(okRes.score).toBe(1);
+
+          const badRes = await prompt.grade('');
+          expect(badRes.passed, `Empty output unexpectedly passed ${prompt.id}`).toBe(false);
+        }
+      }
     }
   });
 
@@ -39,7 +62,7 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
       (p, idx) =>
         p.userPrompt !== dec[idx]?.userPrompt || p.referenceAnswer !== dec[idx]?.referenceAnswer
     ).length;
-    expect(diffCount).toBeGreaterThanOrEqual(12);
+    expect(diffCount).toBeGreaterThanOrEqual(14);
   });
 
   it('isolates host globals and enforces timeout in the JS VM sandbox', async () => {
@@ -53,6 +76,14 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
       200
     );
     expect(escapeRes.passed).toBe(true);
+
+    const suite = buildEvalSuite('2026-11');
+    const exprPrompt = suite.find((p) => p.id === 'code-v2-expr-lang')!;
+    const partialTimeout = await exprPrompt.grade(
+      'function evalProgram(s) { if (s.includes("let x =")) while (true) {} return s === "-2^2" ? -4 : 512; }'
+    );
+    expect(partialTimeout.passed).toBe(false);
+    expect(partialTimeout.score).toBeLessThan(1);
   });
 
   it('computes Spearman rank correlation and Pearson r accurately including ties', () => {
@@ -81,9 +112,13 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
     ).toBe(1);
   });
 
-  it('evaluates models across OpenAI-compatible and Google Gemini response formats', async () => {
-    const suite = buildEvalSuite('2026-11').slice(0, 4);
-    const answers = new Map(suite.map((p) => [p.userPrompt, p.referenceAnswer]));
+  it('evaluates single-turn and 3-turn prompts across OpenAI and Gemini formats (including model role mapping)', async () => {
+    const full = buildEvalSuite('2026-11');
+    const codePrompt = full.find((p) => p.id === 'code-v2-cron-next')!;
+    const multiPrompt = full.find((p) => p.id === 'tools-v2-multiturn-pagination')!;
+    const subset = [codePrompt, multiPrompt];
+
+    let sawGeminiModelRole = false;
 
     vi.stubGlobal(
       'fetch',
@@ -91,19 +126,38 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
         const url = String(input);
         const body = JSON.parse(String(init?.body ?? '{}')) as {
           messages?: Array<{ role: string; content: string }>;
-          contents?: Array<{ parts?: Array<{ text?: string }> }>;
+          contents?: Array<{ role?: string; parts?: Array<{ text?: string }> }>;
         };
-        const userText =
-          body.messages?.find((m) => m.role === 'user')?.content ??
-          body.contents?.[0]?.parts?.[0]?.text ??
-          '';
-        const reply = answers.get(userText) ?? '';
 
+        let reply = '';
         if (url.includes('generativelanguage.googleapis.com')) {
+          const contents = body.contents ?? [];
+          if (contents.some((c) => c.role === 'model')) {
+            sawGeminiModelRole = true;
+          }
+          if (contents.length === 1) {
+            const text = contents[0]?.parts?.[0]?.text ?? '';
+            reply =
+              text === codePrompt.userPrompt
+                ? codePrompt.referenceAnswer
+                : (multiPrompt.referenceTurns?.[0] ?? '');
+          } else {
+            const turnIdx = Math.floor((contents.length - 1) / 2);
+            reply = multiPrompt.referenceTurns?.[turnIdx] ?? '';
+          }
           return new Response(
             JSON.stringify({ candidates: [{ content: { parts: [{ text: reply }] } }] }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           );
+        }
+
+        const msgs = body.messages ?? [];
+        const userOnly = msgs.filter((m) => m.role === 'user');
+        if (userOnly.length === 1 && userOnly[0]?.content === codePrompt.userPrompt) {
+          reply = codePrompt.referenceAnswer;
+        } else {
+          const turnIdx = userOnly.length - 1;
+          reply = multiPrompt.referenceTurns?.[turnIdx] ?? '';
         }
         return new Response(
           JSON.stringify({ choices: [{ message: { content: reply } }] }),
@@ -113,18 +167,20 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
     );
 
     const groqSummary = await evaluateModel(
-      { canonical_id: 'test-model', provider_slug: 'groq', provider_model_id: 'llama-3.3-70b-versatile' },
-      suite,
+      { canonical_id: 'test-model', provider_slug: 'groq', provider_model_id: 'openai/gpt-oss-120b' },
+      subset,
       { seedTag: '2026-11', delayMs: 0, env: { GROQ_API_KEY: 'test-key' } }
     );
-    expect(groqSummary.passedCount).toBe(4);
+    expect(groqSummary.passedCount).toBe(2);
     expect(groqSummary.pillarScores.coding).toBe(100);
+    expect(groqSummary.pillarScores.tools).toBe(100);
 
     const googleSummary = await evaluateModel(
       { canonical_id: 'gemini-2.5-flash', provider_slug: 'google', provider_model_id: 'gemini-2.5-flash' },
-      suite,
+      subset,
       { seedTag: '2026-11', delayMs: 0, env: { GOOGLE_AI_API_KEY: 'test-key' } }
     );
-    expect(googleSummary.passedCount).toBe(4);
+    expect(googleSummary.passedCount).toBe(2);
+    expect(sawGeminiModelRole).toBe(true);
   });
 });

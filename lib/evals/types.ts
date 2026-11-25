@@ -2,7 +2,7 @@ import type { ProviderSlug } from '@/lib/supabase/types';
 
 export type EvalPillar = 'coding' | 'tools' | 'if' | 'reasoning';
 
-export const FB_EVAL_SUITE_VERSION = 'v1.1';
+export const FB_EVAL_SUITE_VERSION = 'v2';
 
 export const EVAL_PILLAR_WEIGHTS: Record<EvalPillar, number> = {
   coding: 0.35,
@@ -10,6 +10,16 @@ export const EVAL_PILLAR_WEIGHTS: Record<EvalPillar, number> = {
   if: 0.15,
   reasoning: 0.3,
 };
+
+export interface EvalMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export type EvalTurnCaller = (
+  messages: ReadonlyArray<EvalMessage>,
+  maxTokens: number
+) => Promise<{ text: string; latencyMs: number }>;
 
 export interface EvalGradeResult {
   passed: boolean;
@@ -27,6 +37,10 @@ export interface EvalPrompt {
   maxTokens: number;
   referenceAnswer: string;
   grade: (output: string) => Promise<EvalGradeResult> | EvalGradeResult;
+  runMultiTurn?: (
+    callTurn: EvalTurnCaller
+  ) => Promise<{ grade: EvalGradeResult; totalLatencyMs: number }>;
+  referenceTurns?: ReadonlyArray<string>;
 }
 
 export interface PromptRunResult {

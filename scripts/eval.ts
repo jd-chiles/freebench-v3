@@ -7,6 +7,7 @@ import {
 import { buildEvalSuite, getCurrentSeedTag } from '@/lib/evals/suite';
 import { FB_EVAL_SUITE_VERSION, type ModelEvalSummary } from '@/lib/evals/types';
 import { parseEnvFile } from '@/lib/keys/manager';
+import { shutdownLangfuseTracing } from '@/lib/evals/langfuse';
 import { getProvidersConfig } from '@/lib/providers/types';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import type { LeaderboardModel, ProviderOffering, ProviderSlug } from '@/lib/supabase/types';
@@ -16,6 +17,7 @@ interface EvalCliFlags {
   calibrate: boolean;
   unscored: boolean;
   write: boolean;
+  verbose: boolean;
   modelFilter: string | null;
   providerFilter: ProviderSlug | null;
   limit: number | null;
@@ -60,6 +62,7 @@ function parseFlags(argv: string[]): EvalCliFlags {
   let calibrate = false;
   let unscored = false;
   let write = false;
+  let verbose = false;
   let modelFilter: string | null = null;
   let providerFilter: ProviderSlug | null = null;
   let limit: number | null = null;
@@ -71,6 +74,7 @@ function parseFlags(argv: string[]): EvalCliFlags {
     else if (arg === '--calibrate') calibrate = true;
     else if (arg === '--unscored') unscored = true;
     else if (arg === '--write') write = true;
+    else if (arg === '--verbose') verbose = true;
     else if (arg.startsWith('--model=')) modelFilter = arg.slice('--model='.length).trim();
     else if (arg.startsWith('--provider=')) {
       providerFilter = arg.slice('--provider='.length).trim() as ProviderSlug;
@@ -94,6 +98,7 @@ function parseFlags(argv: string[]): EvalCliFlags {
     calibrate,
     unscored,
     write,
+    verbose,
     modelFilter,
     providerFilter,
     limit,
@@ -301,10 +306,22 @@ async function main(): Promise<void> {
     out(`\n=== FB-Eval ${FB_EVAL_SUITE_VERSION} Self-Test (seed: ${flags.seedTag}) ===`);
     let passed = 0;
     for (const prompt of suite) {
-      const res = await prompt.grade(prompt.referenceAnswer);
+      let res;
+      if (prompt.runMultiTurn && prompt.referenceTurns) {
+        let turnIdx = 0;
+        const turns = prompt.referenceTurns;
+        const multiRes = await prompt.runMultiTurn(async () => {
+          const text = turns[turnIdx] ?? '';
+          turnIdx += 1;
+          return { text, latencyMs: 1 };
+        });
+        res = multiRes.grade;
+      } else {
+        res = await prompt.grade(prompt.referenceAnswer);
+      }
       if (res.passed) passed += 1;
       out(
-        `  ${res.passed ? 'PASS' : 'FAIL'} [${prompt.pillar.padEnd(9)}] ${prompt.id.padEnd(26)} | ${res.detail}`
+        `  ${res.passed ? 'PASS' : 'FAIL'} [${prompt.pillar.padEnd(9)}] ${prompt.id.padEnd(32)} | ${res.detail}`
       );
     }
     out(`\nResult: ${passed}/${suite.length} reference solutions passed.`);
@@ -388,6 +405,19 @@ async function main(): Promise<void> {
     out(
       `   Score: ${summary.overallScore.toFixed(1)} (${summary.passedCount}/${summary.totalCount}) | Code ${summary.pillarScores.coding.toFixed(0)} · Tools ${summary.pillarScores.tools.toFixed(0)} · IFEval ${summary.pillarScores.if.toFixed(0)} · Logic ${summary.pillarScores.reasoning.toFixed(0)} | avg=${summary.avgLatencyMs ?? '-'}ms`
     );
+    const missed = summary.promptResults.filter((r) => r.score < 1);
+    if (missed.length > 0) {
+      out(
+        `   Missed/Partial: ${missed.map((r) => `${r.promptId}(${r.score.toFixed(2)})`).join(', ')}`
+      );
+    }
+    if (flags.verbose) {
+      for (const r of summary.promptResults) {
+        out(
+          `     - ${r.promptId.padEnd(32)} score=${r.score.toFixed(2)} | ${r.detail}${r.error ? ` | err=${r.error}` : ''}`
+        );
+      }
+    }
   }
 
   if (flags.calibrate && anchorPairs.length >= 2) {
@@ -411,8 +441,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
+main().then(() => shutdownLangfuseTracing()).catch((error) => {
   const msg = error instanceof Error ? error.stack || error.message : String(error);
   process.stderr.write(`FB-Eval failed: ${msg}\n`);
   process.exitCode = 1;
+  void shutdownLangfuseTracing();
 });

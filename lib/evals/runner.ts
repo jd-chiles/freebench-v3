@@ -7,8 +7,10 @@ import {
   FB_EVAL_SUITE_VERSION,
   type AnchorPoint,
   type CalibrationReport,
+  type EvalMessage,
   type EvalPillar,
   type EvalPrompt,
+  type EvalTurnCaller,
   type ModelEvalSummary,
   type PromptRunResult,
 } from './types';
@@ -108,8 +110,7 @@ interface ProviderCompletionCall {
 
 function buildCompletionRequest(
   target: { provider_slug: ProviderSlug; provider_model_id: string },
-  systemPrompt: string,
-  userPrompt: string,
+  messages: ReadonlyArray<EvalMessage>,
   maxTokens: number,
   env: Record<string, string | undefined>
 ): ProviderCompletionCall {
@@ -120,6 +121,13 @@ function buildCompletionRequest(
     if (!apiKey) {
       throw new Error('Missing GOOGLE_AI_API_KEY');
     }
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const contents = messages
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }));
     const modelPath = encodeURIComponent(target.provider_model_id);
     return {
       url: `https://generativelanguage.googleapis.com/v1beta/models/${modelPath}:generateContent?key=${encodeURIComponent(
@@ -129,8 +137,8 @@ function buildCompletionRequest(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
+          contents,
           generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
         }),
       },
@@ -159,10 +167,7 @@ function buildCompletionRequest(
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
           temperature: 0,
           max_tokens: maxTokens,
         }),
@@ -195,10 +200,7 @@ function buildCompletionRequest(
       headers,
       body: JSON.stringify({
         model: target.provider_model_id,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
         temperature: 0,
         max_tokens: maxTokens,
       }),
@@ -240,17 +242,24 @@ function parseRetryAfterMs(headers: Headers): number {
 }
 
 /**
- * Invokes a free-tier LLM endpoint at `temperature: 0` with Retry-After backoff on HTTP 429/503.
+ * Invokes a free-tier LLM endpoint with a multi-turn message list at `temperature: 0`
+ * and Retry-After backoff on HTTP 429/503.
  */
-export async function callModelForEval(
+export async function callModelMessages(
   target: { provider_slug: ProviderSlug; provider_model_id: string },
-  systemPrompt: string,
-  userPrompt: string,
+  messages: ReadonlyArray<EvalMessage>,
   maxTokens: number,
   env: Record<string, string | undefined> = process.env,
-  timeoutMs: number = 45_000
+  timeoutMs: number = 45_000,
+  traceMetadata: Record<string, string | number> = {}
 ): Promise<{ text: string; latencyMs: number }> {
-  const req = buildCompletionRequest(target, systemPrompt, userPrompt, maxTokens, env);
+  const req = buildCompletionRequest(target, messages, maxTokens, env);
+  initLangfuseTracing(env);
+  const generation = startEvalGeneration({
+    model: target.provider_model_id,
+    messages,
+    metadata: { providerSlug: target.provider_slug, ...traceMetadata },
+  });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const controller = new AbortController();
@@ -274,13 +283,56 @@ export async function callModelForEval(
       }
 
       const json = (await res.json()) as unknown;
-      return { text: req.extractText(json), latencyMs };
+      const text = req.extractText(json);
+      const data = json as {
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
+        usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+      };
+      endEvalGeneration(generation, {
+        output: text,
+        inputTokens: data.usage?.prompt_tokens ?? data.usageMetadata?.promptTokenCount,
+        outputTokens: data.usage?.completion_tokens ?? data.usageMetadata?.candidatesTokenCount,
+      });
+      return { text, latencyMs };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const status = message.match(/\bHTTP\s+(\d{3})\b/i)?.[1];
+      endEvalGeneration(generation, {
+        error: status ? `Provider request failed (HTTP ${status})` : 'Provider request failed',
+      });
+      throw error;
     } finally {
       clearTimeout(timer);
     }
   }
 
+  endEvalGeneration(generation, { error: 'Provider request retries exhausted' });
   throw new Error('Exhausted eval request retries');
+}
+
+/**
+ * Invokes a free-tier LLM endpoint at `temperature: 0` with Retry-After backoff on HTTP 429/503.
+ */
+export async function callModelForEval(
+  target: { provider_slug: ProviderSlug; provider_model_id: string },
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+  env: Record<string, string | undefined> = process.env,
+  timeoutMs: number = 45_000,
+  traceMetadata: Record<string, string | number> = {}
+): Promise<{ text: string; latencyMs: number }> {
+  return callModelMessages(
+    target,
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    maxTokens,
+    env,
+    timeoutMs,
+    traceMetadata
+  );
 }
 
 function round2(n: number): number {
@@ -288,7 +340,7 @@ function round2(n: number): number {
 }
 
 /**
- * Runs the full 20-prompt FB-Eval v1 suite on a single model endpoint and returns
+ * Runs the full 20-prompt FB-Eval v2 suite on a single model endpoint and returns
  * weighted pillar and overall `0-100` scores.
  */
 export async function evaluateModel(
@@ -322,17 +374,49 @@ export async function evaluateModel(
     }
 
     try {
-      const { text, latencyMs } = await callModelForEval(
-        target,
-        prompt.systemPrompt,
-        prompt.userPrompt,
-        prompt.maxTokens,
-        env,
-        timeoutMs
-      );
+      let graded;
+      let latencyMs: number;
+      if (prompt.runMultiTurn) {
+        let turnIndex = 0;
+        const callTurn: EvalTurnCaller = async (messages, maxTokens) => {
+          if (turnIndex > 0 && delayMs > 0) {
+            await sleep(delayMs);
+          }
+          const currentTurn = turnIndex + 1;
+          turnIndex += 1;
+          return callModelMessages(target, messages, maxTokens, env, timeoutMs, {
+            canonicalId: target.canonical_id,
+            suiteVersion: FB_EVAL_SUITE_VERSION,
+            seedTag: options.seedTag,
+            promptId: prompt.id,
+            pillar: prompt.pillar,
+            turn: currentTurn,
+          });
+        };
+        const multiRes = await prompt.runMultiTurn(callTurn);
+        graded = multiRes.grade;
+        latencyMs = multiRes.totalLatencyMs;
+      } else {
+        const res = await callModelForEval(
+          target,
+          prompt.systemPrompt,
+          prompt.userPrompt,
+          prompt.maxTokens,
+          env,
+          timeoutMs,
+          {
+            canonicalId: target.canonical_id,
+            suiteVersion: FB_EVAL_SUITE_VERSION,
+            seedTag: options.seedTag,
+            promptId: prompt.id,
+            pillar: prompt.pillar,
+          }
+        );
+        latencyMs = res.latencyMs;
+        graded = await prompt.grade(res.text);
+      }
       consecutiveErrors = 0;
       latencies.push(latencyMs);
-      const graded = await prompt.grade(text);
       promptResults.push({
         promptId: prompt.id,
         pillar: prompt.pillar,
@@ -343,6 +427,21 @@ export async function evaluateModel(
       });
     } catch (error) {
       const errMsg = formatErrorMessage(error);
+      const isModelToolUseError =
+        /\bHTTP\s+400\b/i.test(errMsg) && /tool_use_failed/i.test(errMsg);
+      if (isModelToolUseError) {
+        promptResults.push({
+          promptId: prompt.id,
+          pillar: prompt.pillar,
+          passed: false,
+          score: 0,
+          latencyMs: 0,
+          detail: 'Model invoked native tool call instead of JSON',
+          error: errMsg,
+        });
+        continue;
+      }
+
       consecutiveErrors += 1;
       promptResults.push({
         promptId: prompt.id,

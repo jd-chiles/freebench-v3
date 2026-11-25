@@ -1,4 +1,4 @@
-name: FreeBench FB-Eval v1 (Stealth & Unscored Models)
+name: FreeBench FB-Eval v2 (Stealth & Unscored Models)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      - name: Run FB-Eval v1
+      - name: Run FB-Eval v2
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
