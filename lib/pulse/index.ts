@@ -14,6 +14,20 @@ export interface PulseAggregateResult {
 }
 
 /**
+ * Deduplicates pulse rows by `url`, keeping the latest entry per unique URL
+ * so Postgres `ON CONFLICT (url) DO UPDATE` never receives duplicate keys in one batch.
+ */
+export function dedupePulseItemsByUrl<T extends { url: string }>(
+  items: ReadonlyArray<T>
+): T[] {
+  const byUrl = new Map<string, T>();
+  for (const item of items) {
+    byUrl.set(item.url, item);
+  }
+  return [...byUrl.values()];
+}
+
+/**
  * Concurrently polls all configured zero-cost pulse feeds:
  * GitHub agent releases, Bluesky KOL accounts, RSS/Atom feeds, and HF trending.
  */
