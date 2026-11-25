@@ -13,13 +13,13 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
     vi.unstubAllGlobals();
   });
 
-  it('passes 20/20 reference solutions and rejects empty/malformed answers', async () => {
+  it('passes 28/28 reference solutions and rejects empty/malformed answers', async () => {
     const suite = buildEvalSuite('2026-11');
-    expect(suite).toHaveLength(20);
-    expect(suite.filter((p) => p.pillar === 'coding')).toHaveLength(6);
+    expect(suite).toHaveLength(28);
+    expect(suite.filter((p) => p.pillar === 'coding')).toHaveLength(10);
     expect(suite.filter((p) => p.pillar === 'tools')).toHaveLength(5);
     expect(suite.filter((p) => p.pillar === 'if')).toHaveLength(4);
-    expect(suite.filter((p) => p.pillar === 'reasoning')).toHaveLength(5);
+    expect(suite.filter((p) => p.pillar === 'reasoning')).toHaveLength(9);
 
     for (const prompt of suite) {
       const okRes = await prompt.grade(prompt.referenceAnswer);
@@ -39,7 +39,7 @@ describe('FB-Eval v1 Micro-Benchmark Suite, Sandbox & Correlation', () => {
       (p, idx) =>
         p.userPrompt !== dec[idx]?.userPrompt || p.referenceAnswer !== dec[idx]?.referenceAnswer
     ).length;
-    expect(diffCount).toBeGreaterThanOrEqual(8);
+    expect(diffCount).toBeGreaterThanOrEqual(12);
   });
 
   it('isolates host globals and enforces timeout in the JS VM sandbox', async () => {

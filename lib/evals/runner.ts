@@ -1,5 +1,6 @@
 import { formatErrorMessage } from '@/lib/providers/http';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { endEvalGeneration, initLangfuseTracing, startEvalGeneration } from './langfuse';
 import type { ProviderSlug } from '@/lib/supabase/types';
 import {
   EVAL_PILLAR_WEIGHTS,
@@ -233,7 +234,7 @@ function parseRetryAfterMs(headers: Headers): number {
   if (!raw) return 2000;
   const secs = Number(raw);
   if (Number.isFinite(secs) && secs > 0) {
-    return Math.min(6000, Math.max(1000, Math.round(secs * 1000)));
+    return Math.min(15_000, Math.max(1000, Math.round(secs * 1000)));
   }
   return 2000;
 }
@@ -247,7 +248,7 @@ export async function callModelForEval(
   userPrompt: string,
   maxTokens: number,
   env: Record<string, string | undefined> = process.env,
-  timeoutMs: number = 30_000
+  timeoutMs: number = 45_000
 ): Promise<{ text: string; latencyMs: number }> {
   const req = buildCompletionRequest(target, systemPrompt, userPrompt, maxTokens, env);
 
@@ -307,7 +308,7 @@ export async function evaluateModel(
   const baseDelay = options.delayMs ?? 400;
   const delayMs = Math.max(baseDelay, target.provider_slug === 'mistral' ? 1200 : 0);
   const env = options.env ?? process.env;
-  const timeoutMs = options.timeoutMs ?? 30_000;
+  const timeoutMs = options.timeoutMs ?? 45_000;
   const promptResults: PromptRunResult[] = [];
   const latencies: number[] = [];
   let consecutiveErrors = 0;

@@ -2,13 +2,13 @@ import type { ProviderSlug } from '@/lib/supabase/types';
 
 export type EvalPillar = 'coding' | 'tools' | 'if' | 'reasoning';
 
-export const FB_EVAL_SUITE_VERSION = 'v1';
+export const FB_EVAL_SUITE_VERSION = 'v1.1';
 
 export const EVAL_PILLAR_WEIGHTS: Record<EvalPillar, number> = {
   coding: 0.35,
-  tools: 0.25,
-  if: 0.2,
-  reasoning: 0.2,
+  tools: 0.2,
+  if: 0.15,
+  reasoning: 0.3,
 };
 
 export interface EvalGradeResult {
