@@ -398,6 +398,65 @@ describe('Provider Pollers', () => {
     });
   });
 
+  it('pollMistral groups symmetric (bidirectional) aliases and picks one canonical ID per class', async () => {
+    process.env.MISTRAL_API_KEY = 'mistral-test';
+    const mediumGroup = [
+      'mistral-medium-latest',
+      'mistral-medium',
+      'mistral-medium-3-5',
+      'mistral-medium-3.5',
+      'mistral-medium-3',
+      'mistral-medium-2604',
+      'mistral-vibe-cli-latest',
+      'mistral-vibe-cli-with-tools',
+      'magistral-medium-latest',
+    ];
+    const smallGroup = [
+      'mistral-small-2603',
+      'mistral-small-latest',
+      'mistral-vibe-cli-fast',
+      'magistral-small-latest',
+    ];
+    const codestralGroup = ['codestral-2508', 'codestral-latest'];
+    const ministralGroup = ['ministral-14b-2512', 'ministral-14b-latest'];
+
+    const makeEntries = (ids: string[], ctx: number) =>
+      ids.map((id) => ({
+        id,
+        max_context_length: ctx,
+        capabilities: { completion_chat: true, function_calling: true, vision: false },
+        aliases: ids.filter((other) => other !== id),
+      }));
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        jsonResponse({
+          data: [
+            ...makeEntries(codestralGroup, 262144),
+            ...makeEntries(ministralGroup, 262144),
+            ...makeEntries(mediumGroup, 262144),
+            ...makeEntries(smallGroup, 262144),
+            {
+              id: 'voxtral-small-2507',
+              capabilities: { completion_chat: true },
+              aliases: ['voxtral-small-latest'],
+            },
+          ],
+        })
+      )
+    );
+
+    const result = await pollMistral();
+    expect(result.ok).toBe(true);
+    expect(result.models.map((m) => m.provider_model_id).sort()).toEqual([
+      'codestral-2508',
+      'ministral-14b-2512',
+      'mistral-medium-2604',
+      'mistral-small-2603',
+    ]);
+  });
+
   it('pollSambaNova filters audio/embed models and works keyless when SAMBANOVA_API_KEY is unset', async () => {
     delete process.env.SAMBANOVA_API_KEY;
     vi.stubGlobal(

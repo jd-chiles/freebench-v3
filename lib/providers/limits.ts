@@ -1,4 +1,13 @@
-import { getProvidersConfig, type ModelLimitOverride } from '@/lib/providers/types';
+import {
+  normalizeModelId,
+  sanitizeModelIdentifier,
+  type NormalizedModelResult,
+} from '@/lib/normalization/normalize';
+import {
+  getProvidersConfig,
+  type DiscoveredFreeModel,
+  type ModelLimitOverride,
+} from '@/lib/providers/types';
 import type { AccessMode, ProviderOffering, ProviderSlug } from '@/lib/supabase/types';
 
 export type SessionViabilityLevel = 'full_agent' | 'short_tasks' | 'one_shot';
@@ -184,8 +193,62 @@ export function getProviderAccessMode(slug: ProviderSlug): {
   };
 }
 
+const TRANSIENT_MODEL_SUFFIX_REGEX = /-(?:preview|latest|exp|beta)(?:-\d{2}-\d{2})?$/i;
+
+function compareDiscoveredCandidates(
+  a: { model: DiscoveredFreeModel; norm: NormalizedModelResult },
+  b: { model: DiscoveredFreeModel; norm: NormalizedModelResult }
+): number {
+  const aTransient = TRANSIENT_MODEL_SUFFIX_REGEX.test(a.model.provider_model_id) ? 1 : 0;
+  const bTransient = TRANSIENT_MODEL_SUFFIX_REGEX.test(b.model.provider_model_id) ? 1 : 0;
+  if (aTransient !== bTransient) return aTransient - bTransient;
+
+  const aExact = sanitizeModelIdentifier(a.model.provider_model_id) === a.norm.canonicalId ? 0 : 1;
+  const bExact = sanitizeModelIdentifier(b.model.provider_model_id) === b.norm.canonicalId ? 0 : 1;
+  if (aExact !== bExact) return aExact - bExact;
+
+  const aDated = /-\d{4}$/.test(a.model.provider_model_id) ? 0 : 1;
+  const bDated = /-\d{4}$/.test(b.model.provider_model_id) ? 0 : 1;
+  if (aDated !== bDated) return aDated - bDated;
+
+  const aCtx = -(a.model.context_window ?? 0);
+  const bCtx = -(b.model.context_window ?? 0);
+  if (aCtx !== bCtx) return aCtx - bCtx;
+
+  if (a.model.provider_model_id.length !== b.model.provider_model_id.length) {
+    return a.model.provider_model_id.length - b.model.provider_model_id.length;
+  }
+  return a.model.provider_model_id.localeCompare(b.model.provider_model_id);
+}
+
 /**
- * Deterministically orders offerings:
+ * Deduplicates a single provider's discovered offerings by normalized `canonicalId`,
+ * keeping one deterministic primary `provider_model_id` per canonical model.
+ */
+export function dedupeDiscoveredModelsByCanonicalId(
+  models: ReadonlyArray<DiscoveredFreeModel>
+): Array<{ model: DiscoveredFreeModel; norm: NormalizedModelResult }> {
+  const groups = new Map<string, Array<{ model: DiscoveredFreeModel; norm: NormalizedModelResult }>>();
+  for (const model of models) {
+    const norm = normalizeModelId(model.provider_model_id, model.raw_display_name);
+    const bucket = groups.get(norm.canonicalId);
+    if (bucket) {
+      bucket.push({ model, norm });
+    } else {
+      groups.set(norm.canonicalId, [{ model, norm }]);
+    }
+  }
+
+  const deduped: Array<{ model: DiscoveredFreeModel; norm: NormalizedModelResult }> = [];
+  for (const group of groups.values()) {
+    group.sort(compareDiscoveredCandidates);
+    deduped.push(group[0]!);
+  }
+  return deduped;
+}
+
+/**
+ * Deterministically orders offerings and deduplicates multiple aliases from the same provider:
  * 1. Always-Free + Zero-Training
  * 2. Always-Free + Trains-on-Data
  * 3. Trial-Credit + Zero-Training
@@ -194,7 +257,7 @@ export function getProviderAccessMode(slug: ProviderSlug): {
  * then stronger Session Viability (`full_agent` > `short_tasks` > `one_shot`), then slug.
  */
 export function sortProviderOfferings(offerings: ProviderOffering[]): ProviderOffering[] {
-  return [...offerings].sort((a, b) => {
+  const sorted = [...offerings].sort((a, b) => {
     const aTierRank = (a.tier_type === 'trial_credit' ? 2 : 0) + (a.trains_on_data ? 1 : 0);
     const bTierRank = (b.tier_type === 'trial_credit' ? 2 : 0) + (b.trains_on_data ? 1 : 0);
     if (aTierRank !== bTierRank) return aTierRank - bTierRank;
@@ -207,8 +270,27 @@ export function sortProviderOfferings(offerings: ProviderOffering[]): ProviderOf
     const bViability = VIABILITY_ORDER[computeSessionViability(b).level];
     if (aViability !== bViability) return aViability - bViability;
 
-    return a.provider_slug.localeCompare(b.provider_slug);
+    const slugCmp = a.provider_slug.localeCompare(b.provider_slug);
+    if (slugCmp !== 0) return slugCmp;
+
+    const aTransient = TRANSIENT_MODEL_SUFFIX_REGEX.test(a.provider_model_id) ? 1 : 0;
+    const bTransient = TRANSIENT_MODEL_SUFFIX_REGEX.test(b.provider_model_id) ? 1 : 0;
+    if (aTransient !== bTransient) return aTransient - bTransient;
+
+    if (a.provider_model_id.length !== b.provider_model_id.length) {
+      return a.provider_model_id.length - b.provider_model_id.length;
+    }
+    return a.provider_model_id.localeCompare(b.provider_model_id);
   });
+
+  const seenProviders = new Set<ProviderSlug>();
+  const deduped: ProviderOffering[] = [];
+  for (const offering of sorted) {
+    if (seenProviders.has(offering.provider_slug)) continue;
+    seenProviders.add(offering.provider_slug);
+    deduped.push(offering);
+  }
+  return deduped;
 }
 
 /**
