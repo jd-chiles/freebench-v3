@@ -23,7 +23,10 @@ import {
   shouldApplyDeactivation,
   tagProviderError,
 } from '@/lib/providers/http';
-import { resolveEffectiveLimits } from '@/lib/providers/limits';
+import {
+  dedupeDiscoveredModelsByCanonicalId,
+  resolveEffectiveLimits,
+} from '@/lib/providers/limits';
 import { getProvidersConfig, type ProviderPollResult, type ProviderSlug } from '@/lib/providers/types';
 import {
   dispatchAvailabilityEvents,
@@ -393,9 +396,10 @@ async function main(): Promise<void> {
       const availabilityUpserts: Array<Record<string, unknown>> = [];
       const matchedRawIds: string[] = [];
 
-      for (const model of result.models) {
+      const dedupedModels = dedupeDiscoveredModelsByCanonicalId(result.models);
+
+      for (const { model, norm } of dedupedModels) {
         activeIds.push(model.provider_model_id);
-        const norm = normalizeModelId(model.provider_model_id, model.raw_display_name);
         touchedCanonicalIds.add(norm.canonicalId);
 
         if (!norm.matched) {

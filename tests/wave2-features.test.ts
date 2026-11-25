@@ -8,6 +8,7 @@ import {
 } from '@/lib/leaderboard/url-state';
 import {
   computeSessionViability,
+  dedupeDiscoveredModelsByCanonicalId,
   getNextResetCountdown,
   resolveEffectiveLimits,
   sortProviderOfferings,
@@ -93,6 +94,79 @@ describe('Wave 2 Limits, URL State & Stack Builder', () => {
     ]);
 
     expect(sorted.map((o) => o.provider_slug)).toEqual(['sambanova', 'google', 'cerebras']);
+
+    const dedupedUi = sortProviderOfferings([
+      makeOffering({ provider_slug: 'mistral', provider_model_id: 'mistral-medium', trains_on_data: true }),
+      makeOffering({ provider_slug: 'mistral', provider_model_id: 'mistral-medium-3', trains_on_data: true }),
+    ]);
+    expect(dedupedUi).toHaveLength(1);
+    expect(dedupedUi[0]?.provider_model_id).toBe('mistral-medium');
+  });
+
+  it('deduplicates discovered provider offerings by canonical ID', () => {
+    const deduped = dedupeDiscoveredModelsByCanonicalId([
+      {
+        provider_slug: 'mistral',
+        provider_model_id: 'mistral-medium',
+        raw_display_name: 'mistral-medium',
+        context_window: 262144,
+        supports_tools: true,
+        supports_vision: false,
+        rpm_limit: '1 RPS',
+        rpd_limit: 'Free',
+        tier_type: 'always_free',
+        trains_on_data: true,
+        requires_credit_card: false,
+        signup_url: 'https://console.mistral.ai/',
+      },
+      {
+        provider_slug: 'mistral',
+        provider_model_id: 'mistral-medium-3',
+        raw_display_name: 'mistral-medium-3',
+        context_window: 262144,
+        supports_tools: true,
+        supports_vision: false,
+        rpm_limit: '1 RPS',
+        rpd_limit: 'Free',
+        tier_type: 'always_free',
+        trains_on_data: true,
+        requires_credit_card: false,
+        signup_url: 'https://console.mistral.ai/',
+      },
+      {
+        provider_slug: 'google',
+        provider_model_id: 'gemini-3.1-flash-lite-preview',
+        raw_display_name: 'Gemini 3.1 Flash-Lite Preview',
+        context_window: 1048576,
+        supports_tools: true,
+        supports_vision: true,
+        rpm_limit: '15 RPM',
+        rpd_limit: '1,000 RPD',
+        tier_type: 'always_free',
+        trains_on_data: true,
+        requires_credit_card: false,
+        signup_url: 'https://aistudio.google.com/',
+      },
+      {
+        provider_slug: 'google',
+        provider_model_id: 'gemini-3.1-flash-lite',
+        raw_display_name: 'Gemini 3.1 Flash-Lite',
+        context_window: 1048576,
+        supports_tools: true,
+        supports_vision: true,
+        rpm_limit: '15 RPM',
+        rpd_limit: '1,000 RPD',
+        tier_type: 'always_free',
+        trains_on_data: true,
+        requires_credit_card: false,
+        signup_url: 'https://aistudio.google.com/',
+      },
+    ]);
+
+    expect(deduped.map((d) => `${d.norm.canonicalId}:${d.model.provider_model_id}`).sort()).toEqual([
+      'gemini-3.1-flash-lite:gemini-3.1-flash-lite',
+      'mistral-medium-3:mistral-medium-3',
+    ]);
   });
 
   it('round-trips leaderboard URL search params cleanly', () => {
