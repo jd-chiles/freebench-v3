@@ -19,6 +19,7 @@ import {
   sortProviderOfferings,
 } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 
 export const revalidate = 21600;
 
@@ -34,7 +35,8 @@ export async function generateMetadata({
     return { title: 'Model Not Found' };
   }
 
-  const providerNames = model.providers.map((p) => p.provider_slug).join(', ');
+  const sortedProviders = sortProviderOfferings(model.providers);
+  const providerNames = sortedProviders.map((p) => p.provider_slug).join(', ');
   return {
     title: `${model.display_name} — Free API Providers, Limits & Benchmarks`,
     description: `Use ${model.display_name} free via ${providerNames}. FreeBench Score ${formatScore(
@@ -53,7 +55,8 @@ export default async function ModelDetailPage({
   if (!model) notFound();
 
   const providersConfig = getProvidersConfig();
-  const siteUrl = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+  const sortedProviders = sortProviderOfferings(model.providers);
+  const siteUrl = getSiteUrl();
 
   const appJsonLd = {
     '@context': 'https://schema.org',
@@ -201,7 +204,7 @@ export default async function ModelDetailPage({
       {/* Free Providers Table */}
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-zinc-100">
-          Where to Run {model.display_name} for Free ({model.providers.length})
+          Where to Run {model.display_name} for Free ({sortedProviders.length})
         </h2>
         <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
           <table className="w-full min-w-[780px] border-collapse text-left">
@@ -217,7 +220,7 @@ export default async function ModelDetailPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/70">
-              {sortProviderOfferings(model.providers).map((offering) => {
+              {sortedProviders.map((offering) => {
                 const cfg = providersConfig[offering.provider_slug];
                 const limits = resolveEffectiveLimits(offering);
                 const viability = computeSessionViability(offering);
@@ -317,7 +320,7 @@ export default async function ModelDetailPage({
 
       <PaidEscapeHatchCard canonicalId={model.canonical_id} displayName={model.display_name} />
 
-      <SnippetPanel providers={model.providers} canonicalId={model.canonical_id} />
+      <SnippetPanel providers={sortedProviders} canonicalId={model.canonical_id} />
     </div>
   );
 }

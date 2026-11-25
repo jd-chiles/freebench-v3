@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { fetchJsonWithTimeout } from '@/lib/providers/http';
+import { getSiteUrl } from '@/lib/site';
 import type { AvailabilityEventRecord, ProviderSlug } from '@/lib/supabase/types';
 
 export type PendingAvailabilityEvent = Omit<AvailabilityEventRecord, 'id' | 'detected_at'>;
@@ -36,7 +37,7 @@ function prioritizeEvents(events: PendingAvailabilityEvent[]): PendingAvailabili
 }
 
 function formatEventBatchMessage(events: PendingAvailabilityEvent[]): string {
-  const siteUrl = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+  const siteUrl = getSiteUrl();
   const prioritized = prioritizeEvents(events);
   const top = prioritized.slice(0, 5);
   const lines = top.map((evt) => `- ${SEVERITY_TAG[evt.event_type]} ${evt.headline}`);
@@ -161,7 +162,7 @@ export async function dispatchAvailabilityEvents(
 export async function dispatchKeyExpiredAlerts(alerts: KeyExpiredAlert[]): Promise<string[]> {
   if (alerts.length === 0) return [];
 
-  const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench.dev').replace(/\/$/, '');
+  const siteUrl = getSiteUrl();
   const lines = alerts.map(
     (item) => `- [KEY EXPIRED] **${item.provider}** (\`${item.envVar}\`): ${item.error}`
   );

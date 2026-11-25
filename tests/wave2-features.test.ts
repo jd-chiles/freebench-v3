@@ -13,6 +13,8 @@ import {
   resolveEffectiveLimits,
   sortProviderOfferings,
 } from '@/lib/providers/limits';
+import { getModelById } from '@/lib/data/queries';
+import { getSiteUrl } from '@/lib/site';
 import { buildFallbackStack } from '@/lib/snippets/stack-generator';
 import type { LeaderboardModel, ProviderOffering } from '@/lib/supabase/types';
 
@@ -229,5 +231,19 @@ describe('Wave 2 Limits, URL State & Stack Builder', () => {
     const opencode = stack.configs.find((c) => c.id === 'opencode')?.code ?? '';
     const parsedJson = JSON.parse(opencode) as { model?: string; small_model?: string };
     expect(parsedJson.model).toBeTruthy();
+  });
+
+  it('resolves canonical site URL with fallback and handles malformed model IDs safely', async () => {
+    expect(getSiteUrl({})).toBe('https://freebench.org');
+    expect(getSiteUrl({ SITE_URL: 'https://freebench-v3.vercel.app/' })).toBe(
+      'https://freebench-v3.vercel.app'
+    );
+    expect(getSiteUrl({ VERCEL_PROJECT_PRODUCTION_URL: 'freebench.org' })).toBe(
+      'https://freebench.org'
+    );
+    expect(getSiteUrl({ SITE_URL: 'not a valid url://' })).toBe('https://freebench.org');
+
+    const malformed = await getModelById('%E0%A4%A');
+    expect(malformed.model).toBeNull();
   });
 });

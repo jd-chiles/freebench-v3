@@ -7,6 +7,26 @@ const NewsletterBodySchema = z.object({
   sourcePath: z.string().max(200).optional(),
 });
 
+const NEWSLETTER_COOLDOWN_MS = 30_000;
+const recentSubscribesByIp = new Map<string, number>();
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0]?.trim() || 'unknown';
+  }
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
+function sanitizeSourcePath(raw: string | undefined): string {
+  if (!raw) return '/';
+  const cleaned = raw.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  if (!cleaned.startsWith('/') || cleaned.startsWith('//')) {
+    return '/';
+  }
+  return cleaned;
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.json().catch(() => null);
   const parsed = NewsletterBodySchema.safeParse(rawBody);
@@ -18,6 +38,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const now = Date.now();
+  const ip = getClientIp(request);
+  const lastAttempt = recentSubscribesByIp.get(ip);
+  if (lastAttempt && now - lastAttempt < NEWSLETTER_COOLDOWN_MS) {
+    return NextResponse.json(
+      { error: 'Please wait before subscribing again.' },
+      { status: 429 }
+    );
+  }
+  recentSubscribesByIp.set(ip, now);
+
+  if (recentSubscribesByIp.size > 1_000) {
+    for (const [key, ts] of recentSubscribesByIp.entries()) {
+      if (now - ts >= NEWSLETTER_COOLDOWN_MS) {
+        recentSubscribesByIp.delete(key);
+      }
+    }
+  }
+
   const supabase = getSupabaseAnonClient();
   if (!supabase) {
     return NextResponse.json({ ok: true, mode: 'demo' });
@@ -26,7 +65,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from('newsletter_subscribers').upsert(
     {
       email: parsed.data.email.toLowerCase(),
-      source_path: parsed.data.sourcePath ?? '/',
+      source_path: sanitizeSourcePath(parsed.data.sourcePath),
     },
     { onConflict: 'email' }
   );

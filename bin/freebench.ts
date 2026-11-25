@@ -14,7 +14,7 @@ async function loadModels(offline: boolean): Promise<{ models: LeaderboardModel[
     return { models: loadOfflineModels(), source: 'seed-snapshot' };
   }
 
-  const baseUrl = (process.env.FREEBENCH_API_URL?.trim() || 'https://freebench.dev').replace(
+  const baseUrl = (process.env.FREEBENCH_API_URL?.trim() || 'https://freebench.org').replace(
     /\/$/,
     ''
   );

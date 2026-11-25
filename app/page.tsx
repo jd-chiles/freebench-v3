@@ -8,6 +8,7 @@ import { getLeaderboardData, TASK_DEFINITIONS } from '@/lib/data/queries';
 import { formatRelativeTime } from '@/lib/format';
 import { sortProviderOfferings } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 import type { LeaderboardModel, ProviderOffering } from '@/lib/supabase/types';
 
 export const revalidate = 21600;
@@ -43,7 +44,7 @@ export default async function HomePage() {
   const topAgenticProvider = topAgentic ? pickBestAlwaysFreeProvider(topAgentic) : undefined;
 
   const latestPulseItem = recentPulse[0];
-  const siteUrl = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+  const siteUrl = getSiteUrl();
 
   const datasetJsonLd = {
     '@context': 'https://schema.org',

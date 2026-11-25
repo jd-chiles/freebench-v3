@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { getLeaderboardData } from '@/lib/data/queries';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 import './globals.css';
 
 const PROVIDER_COUNT = Object.keys(getProvidersConfig()).length;
@@ -23,7 +24,7 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
-const SITE_URL = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+const SITE_URL = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

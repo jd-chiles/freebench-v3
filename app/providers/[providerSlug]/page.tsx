@@ -7,6 +7,7 @@ import { ScoreBar } from '@/components/ScoreBar';
 import { SnippetPanel } from '@/components/SnippetPanel';
 import { getProviderPageData } from '@/lib/data/queries';
 import { formatContextWindow } from '@/lib/format';
+import { sortProviderOfferings } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
 import type { ProviderSlug } from '@/lib/supabase/types';
 
@@ -182,7 +183,7 @@ export default async function ProviderPage({
             Quick-Start Snippet ({models[0].display_name})
           </h2>
           <SnippetPanel
-            providers={models[0].providers.filter((p) => p.provider_slug === slug)}
+            providers={sortProviderOfferings(models[0].providers).filter((p) => p.provider_slug === slug)}
             canonicalId={models[0].canonical_id}
           />
         </section>
