@@ -140,7 +140,8 @@
       "llama3.3-70b",
       "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
       "Meta-Llama-3.3-70B-Instruct",
-      "llama-3.3-70b"
+      "llama-3.3-70b",
+      "llama-3.3-70b-instruct-turbo"
     ]
   },
   "llama-3.2-3b-instruct": {
@@ -181,7 +182,8 @@
       "@cf/meta/llama-3.1-8b-instruct",
       "@cf/meta/llama-3.1-8b-instruct-fast",
       "Meta-Llama-3.1-8B-Instruct",
-      "Llama 3.1-8B"
+      "Llama 3.1-8B",
+      "meta-llama-3.1-8b-instruct-turbo"
     ]
   },
   "llama-4-scout": {
@@ -267,7 +269,8 @@
       "@cf/qwen/qwen3-30b-a3b-fp8",
       "Qwen3-30B-A3B",
       "Qwen3-30B-A3B-Instruct (Jul 2025)",
-      "Qwen3-30B-A3B-Instruct-2507 (FC)"
+      "Qwen3-30B-A3B-Instruct-2507 (FC)",
+      "qwen3-30b-a3b-thinking"
     ]
   },
   "qwen-2.5-coder-32b-instruct": {
@@ -318,7 +321,8 @@
       "Gemini 2.5 Pro (2025-05-06)",
       "Gemini 2.5 Pro Preview 03-25",
       "gemini-2.5-pro-preview-06-05 (32k think)",
-      "gemini-2.5-pro-preview-06-05 (default think)"
+      "gemini-2.5-pro-preview-06-05 (default think)",
+      "gemini-2.5-pro-06-05-highthinking"
     ]
   },
   "gemini-2.5-flash": {
@@ -339,7 +343,9 @@
       "Gemini 2.5 Flash (Apr 2025)",
       "Gemini 2.5 Flash (2025-04-17)",
       "gemini-2.5-flash-preview-05-20 (24k think)",
-      "gemini-2.5-flash-preview-04-17 (default)"
+      "gemini-2.5-flash-preview-04-17 (default)",
+      "gemini-2.5-flash-06-05-highthinking",
+      "gemini-2.5-flash-preview-09-2025-highthinking"
     ]
   },
   "gemini-2.5-flash-lite": {
@@ -352,7 +358,9 @@
       "gemini-2.5-flash-lite",
       "gemini-2.5-flash-lite-preview-06-17",
       "Gemini 2.5 Flash-Lite",
-      "Gemini 2.5 Flash-Lite (Jun 2025)"
+      "Gemini 2.5 Flash-Lite (Jun 2025)",
+      "gemini-2.5-flash-lite-highthinking",
+      "gemini-2.5-flash-lite-preview-09-2025-highthinking"
     ]
   },
   "gemini-3-flash": {
@@ -365,7 +373,9 @@
       "gemini-3-flash",
       "gemini-3-flash-preview",
       "Gemini 3 Flash",
-      "Gemini 3 Flash (high)"
+      "Gemini 3 Flash (high)",
+      "gemini-3-flash-preview-high",
+      "gemini-3-flash-preview-minimal"
     ]
   },
   "gemini-3.1-flash-lite": {
@@ -377,7 +387,8 @@
     "aliases": [
       "gemini-3.1-flash-lite",
       "gemini-3.1-flash-lite-preview",
-      "Gemini 3.1 Flash-Lite"
+      "Gemini 3.1 Flash-Lite",
+      "gemini-3.1-flash-lite-preview-high"
     ]
   },
   "gemini-3.5-flash-lite": {
@@ -609,7 +620,8 @@
       "openai/gpt-oss-20b",
       "openai/gpt-oss-20b:free",
       "gpt-oss-20b",
-      "@cf/openai/gpt-oss-20b"
+      "@cf/openai/gpt-oss-20b",
+      "openai-fast"
     ]
   },
   "kimi-k2": {
@@ -783,6 +795,44 @@
       "minimax-m3.1-flash",
       "MiniMax-M3.1-Flash",
       "minimaxai/minimax-m3.1-flash"
+    ]
+  },
+  "nemotron-3-super-120b-a12b": {
+    "display_name": "Nemotron 3 Super 120B",
+    "family": "Nemotron",
+    "parameter_count": "120B MoE",
+    "is_open_weights": true,
+    "fallback_context_window": 262144,
+    "aliases": [
+      "nemotron-3-super-120b-a12b",
+      "@cf/nvidia/nemotron-3-120b-a12b",
+      "nemotron-3-120b-a12b"
+    ]
+  },
+  "beam-1.0": {
+    "display_name": "Beam 1.0",
+    "family": "Reflection",
+    "parameter_count": "Proprietary",
+    "is_open_weights": false,
+    "fallback_context_window": 1000000,
+    "aliases": [
+      "beam-1.0",
+      "beam-free",
+      "reflection/beam-free",
+      "Beam 1.0"
+    ]
+  },
+  "flint-v1.0": {
+    "display_name": "Flint v1.0",
+    "family": "Recursive",
+    "parameter_count": "40B",
+    "is_open_weights": false,
+    "fallback_context_window": 262144,
+    "aliases": [
+      "flint-v1.0",
+      "flint-40b-free",
+      "recursive/flint-v1.0",
+      "recursive/flint-v1.0:free"
     ]
   },
   "command-a-03-2025": {

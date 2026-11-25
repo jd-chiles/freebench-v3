@@ -90,10 +90,19 @@ export async function pollKilo(): Promise<ProviderPollResult> {
       });
     }
 
+    const freeIds = new Set(
+      models
+        .filter((m) => m.provider_model_id.endsWith(':free'))
+        .map((m) => m.provider_model_id)
+    );
+    const dedupedModels = models.filter(
+      (m) => m.provider_model_id.endsWith(':free') || !freeIds.has(`${m.provider_model_id}:free`)
+    );
+
     return {
       provider_slug: 'kilo',
       ok: true,
-      models,
+      models: dedupedModels,
       duration_ms: Date.now() - startedAt,
     };
   } catch (error) {

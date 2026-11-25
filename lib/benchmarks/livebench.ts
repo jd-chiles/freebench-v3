@@ -112,10 +112,23 @@ export function parseLiveBenchData(
   return observations;
 }
 
-async function discoverLatestLiveBenchRelease(
+const LIVEBENCH_FALLBACK_RELEASES = [
+  '2026_01_08',
+  '2025_11_25',
+  '2025_05_30',
+  '2025_04_25',
+  '2025_04_02',
+  '2024_11_25',
+];
+
+async function discoverLiveBenchReleases(
   githubApiUrl: string,
   fallbackRelease: string
-): Promise<string> {
+): Promise<string[]> {
+  const defaultList = [
+    ...new Set([fallbackRelease, ...LIVEBENCH_FALLBACK_RELEASES]),
+  ].sort((a, b) => b.localeCompare(a));
+
   try {
     const headers: Record<string, string> = {
       'User-Agent': 'FreeBench/0.0.1',
@@ -136,42 +149,62 @@ async function discoverLatestLiveBenchRelease(
       }
     }
 
-    dates.sort((a, b) => b.localeCompare(a));
-    return dates[0] ?? fallbackRelease;
+    const uniqueSorted = [...new Set(dates)].sort((a, b) => b.localeCompare(a));
+    return (uniqueSorted.length > 0 ? uniqueSorted : defaultList).slice(0, 8);
   } catch {
-    return fallbackRelease;
+    return defaultList.slice(0, 8);
   }
 }
 
 /**
- * Discovers and ingests the newest LiveBench release CSV + category mapping JSON.
+ * Discovers and ingests recent LiveBench release CSVs + category JSONs (newest-first backfill).
  */
 export async function pollLiveBench(): Promise<BenchmarkPollResult> {
   const startedAt = Date.now();
   const config = getBenchmarksConfig().livebench;
 
   try {
-    const release = await discoverLatestLiveBenchRelease(
+    const releases = await discoverLiveBenchReleases(
       config.github_contents_api,
       config.fallback_release
     );
 
-    const tableUrl = `${config.base_url}/table_${release}.csv`;
-    const categoriesUrl = `${config.base_url}/categories_${release}.json`;
+    const settled = await Promise.allSettled(
+      releases.map(async (release) => {
+        const tableUrl = `${config.base_url}/table_${release}.csv`;
+        const categoriesUrl = `${config.base_url}/categories_${release}.json`;
+        const [csvText, rawCategories] = await Promise.all([
+          fetchTextWithTimeout(tableUrl, {}, 20_000),
+          fetchJsonWithTimeout<unknown>(categoriesUrl, {}, 15_000),
+        ]);
+        const categoriesMap = CategoriesJsonSchema.parse(rawCategories);
+        return {
+          release,
+          observations: parseLiveBenchData(csvText, categoriesMap, release),
+        };
+      })
+    );
 
-    const [csvText, rawCategories] = await Promise.all([
-      fetchTextWithTimeout(tableUrl, {}, 20_000),
-      fetchJsonWithTimeout<unknown>(categoriesUrl, {}, 15_000),
-    ]);
+    const succeeded = settled
+      .filter(
+        (r): r is PromiseFulfilledResult<{ release: string; observations: BenchmarkObservation[] }> =>
+          r.status === 'fulfilled'
+      )
+      .map((r) => r.value);
 
-    const categoriesMap = CategoriesJsonSchema.parse(rawCategories);
-    const observations = parseLiveBenchData(csvText, categoriesMap, release);
+    if (succeeded.length === 0) {
+      const firstRejected = settled.find(
+        (r): r is PromiseRejectedResult => r.status === 'rejected'
+      );
+      throw firstRejected ? firstRejected.reason : new Error('No LiveBench releases fetched');
+    }
 
+    const observations = succeeded.flatMap((entry) => entry.observations);
     return {
       source: 'livebench',
       ok: true,
       observations,
-      release_tag: release,
+      release_tag: succeeded[0]!.release,
       duration_ms: Date.now() - startedAt,
     };
   } catch (error) {

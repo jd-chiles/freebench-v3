@@ -36,6 +36,15 @@ describe('Model Normalization & Aliasing', () => {
     );
     expect(normalizeModelId('Gemini 2.5 Pro (Jun 2025)').canonicalId).toBe('gemini-2.5-pro');
     expect(normalizeModelId('Qwen 3.8 27B').canonicalId).toBe('qwen3.8-27b');
+    expect(normalizeModelId('reflection/beam-free').canonicalId).toBe('beam-1.0');
+    expect(normalizeModelId('Beam 1.0').canonicalId).toBe('beam-1.0');
+    expect(normalizeModelId('openai-fast').canonicalId).toBe('gpt-oss-20b');
+    expect(normalizeModelId('@cf/nvidia/nemotron-3-120b-a12b').canonicalId).toBe(
+      'nemotron-3-super-120b-a12b'
+    );
+    expect(normalizeModelId('gemini-2.5-pro-06-05-highthinking').canonicalId).toBe(
+      'gemini-2.5-pro'
+    );
   });
 
   it('has zero duplicate sanitized aliases in config/aliases.json', () => {

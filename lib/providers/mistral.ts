@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { fetchJsonWithTimeout, formatErrorMessage, missingEnvResult } from './http';
 import { getProvidersConfig, type DiscoveredFreeModel, type ProviderPollResult } from './types';
 
+const MISTRAL_NON_CHAT_REGEX = /voxtral|embed|moderation|ocr|^mistral-vibe-cli/i;
+
 const MistralModelSchema = z.object({
   id: z.string(),
   name: z.string().optional(),
@@ -51,7 +53,9 @@ export async function pollMistral(): Promise<ProviderPollResult> {
     const aliasedIds = new Set<string>();
     for (const item of parsed.data) {
       for (const alias of item.aliases ?? []) {
-        aliasedIds.add(alias);
+        if (alias !== item.id) {
+          aliasedIds.add(alias);
+        }
       }
     }
 
@@ -60,10 +64,13 @@ export async function pollMistral(): Promise<ProviderPollResult> {
       if (item.capabilities?.completion_chat !== true) {
         continue;
       }
+      if (MISTRAL_NON_CHAT_REGEX.test(item.id)) {
+        continue;
+      }
       if (isDeprecated(item.deprecation, nowMs)) {
         continue;
       }
-      if (item.id.endsWith('-latest') && aliasedIds.has(item.id)) {
+      if (aliasedIds.has(item.id)) {
         continue;
       }
 

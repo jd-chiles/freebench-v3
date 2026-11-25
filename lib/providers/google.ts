@@ -88,10 +88,17 @@ export async function pollGoogle(): Promise<ProviderPollResult> {
       pageCount += 1;
     } while (pageToken && pageCount < 20);
 
+    const stableIds = new Set(models.map((m) => m.provider_model_id));
+    const dedupedModels = models.filter(
+      (m) =>
+        !m.provider_model_id.endsWith('-preview') ||
+        !stableIds.has(m.provider_model_id.replace(/-preview$/i, ''))
+    );
+
     return {
       provider_slug: 'google',
       ok: true,
-      models,
+      models: dedupedModels,
       duration_ms: Date.now() - startedAt,
     };
   } catch (error) {

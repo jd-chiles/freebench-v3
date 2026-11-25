@@ -149,6 +149,12 @@ describe('Provider Pollers', () => {
             supportedGenerationMethods: ['generateContent'],
           },
           {
+            name: 'models/gemma-3-27b-it-preview',
+            displayName: 'Gemma 3 27B IT Preview',
+            inputTokenLimit: 131072,
+            supportedGenerationMethods: ['generateContent'],
+          },
+          {
             name: 'models/paid-only-enterprise-model',
             inputTokenLimit: 32000,
             supportedGenerationMethods: ['generateContent'],
@@ -345,6 +351,25 @@ describe('Provider Pollers', () => {
               capabilities: { completion_chat: true },
             },
             {
+              id: 'mistral-medium-3',
+              max_context_length: 131072,
+              capabilities: { completion_chat: true },
+              aliases: ['mistral-medium', 'mistral-medium-latest'],
+            },
+            {
+              id: 'mistral-medium',
+              max_context_length: 131072,
+              capabilities: { completion_chat: true },
+            },
+            {
+              id: 'voxtral-small-2507',
+              capabilities: { completion_chat: true },
+            },
+            {
+              id: 'mistral-vibe-cli-fast',
+              capabilities: { completion_chat: true },
+            },
+            {
               id: 'mistral-embed',
               capabilities: { completion_chat: false },
             },
@@ -360,7 +385,11 @@ describe('Provider Pollers', () => {
 
     const result = await pollMistral();
     expect(result.ok).toBe(true);
-    expect(result.models).toHaveLength(1);
+    expect(result.models).toHaveLength(2);
+    expect(result.models.map((m) => m.provider_model_id)).toEqual([
+      'mistral-small-2503',
+      'mistral-medium-3',
+    ]);
     expect(result.models[0]).toMatchObject({
       provider_model_id: 'mistral-small-2503',
       trains_on_data: true,
@@ -409,6 +438,11 @@ describe('Provider Pollers', () => {
             },
             {
               id: 'google/lyria-3-pro-preview',
+              pricing: { prompt: '0', completion: '0' },
+            },
+            {
+              id: 'deepseek/deepseek-r1',
+              name: 'DeepSeek R1',
               pricing: { prompt: '0', completion: '0' },
             },
             {

@@ -250,6 +250,9 @@ function mergeModelBatchEntry(
 }
 
 function shouldReplaceScoreRow(existing: ScoreUpsertRow, candidate: ScoreUpsertRow): boolean {
+  if (candidate.source === 'livebench' && candidate.release_tag !== existing.release_tag) {
+    return candidate.release_tag.localeCompare(existing.release_tag) > 0;
+  }
   if (candidate.source === 'bfcl') {
     const existingFc = /\(FC\)/i.test(existing.raw_model_name);
     const candidateFc = /\(FC\)/i.test(candidate.raw_model_name);
