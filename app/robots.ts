@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
+import { getSiteUrl } from '@/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+  const siteUrl = getSiteUrl();
 
   return {
     rules: [
@@ -11,6 +12,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/revalidate', '/api/newsletter', '/go/'],
       },
     ],
-    sitemap: `${siteUrl.replace(/\/$/, '')}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }

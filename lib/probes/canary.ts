@@ -186,7 +186,7 @@ function buildProbeRequest(
     headers.Authorization = `Bearer ${apiKey}`;
   }
   if (target.provider_slug === 'openrouter') {
-    headers['HTTP-Referer'] = 'https://freebench.dev';
+    headers['HTTP-Referer'] = 'https://freebench.org';
     headers['X-Title'] = 'FreeBench';
   }
 

@@ -1,11 +1,13 @@
 import { filterModelsForTask, getLeaderboardData, TASK_DEFINITIONS } from '@/lib/data/queries';
 import { formatContextWindow, formatScore } from '@/lib/format';
+import { sortProviderOfferings } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 
 export const revalidate = 21600;
 
 export async function GET() {
-  const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench.dev').replace(/\/$/, '');
+  const siteUrl = getSiteUrl();
   const { models, latestSync } = await getLeaderboardData();
   const providersConfig = getProvidersConfig();
   const providerCount = Object.keys(providersConfig).length;
@@ -31,7 +33,9 @@ export async function GET() {
   for (const task of TASK_DEFINITIONS) {
     const top = filterModelsForTask(models, task.slug)[0];
     if (!top) continue;
-    const providers = top.providers.map((p) => p.provider_slug).join(', ');
+    const providers = sortProviderOfferings(top.providers)
+      .map((p) => p.provider_slug)
+      .join(', ');
     lines.push(
       `- ${task.shortLabel}: ${top.display_name} (Composite ${formatScore(
         top.freebench_score
@@ -48,7 +52,7 @@ export async function GET() {
 
   lines.push('', '## Top 10 Free Models Overall');
   for (const [idx, model] of models.slice(0, 10).entries()) {
-    const providers = model.providers
+    const providers = sortProviderOfferings(model.providers)
       .map((p) => `${p.provider_slug}:${p.provider_model_id}`)
       .join(' | ');
     lines.push(

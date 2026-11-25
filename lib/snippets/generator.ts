@@ -253,17 +253,17 @@ const { text } = await generateText({
 
   const extraCurlHeaders =
     providerSlug === 'openrouter'
-      ? ` \\\n  -H "HTTP-Referer: https://freebench.dev" \\\n  -H "X-Title: FreeBench"`
+      ? ` \\\n  -H "HTTP-Referer: https://freebench.org" \\\n  -H "X-Title: FreeBench"`
       : '';
 
   const openRouterDefaultHeadersTs =
     providerSlug === 'openrouter'
-      ? `,\n  defaultHeaders: {\n    "HTTP-Referer": "https://freebench.dev",\n    "X-Title": "FreeBench",\n  }`
+      ? `,\n  defaultHeaders: {\n    "HTTP-Referer": "https://freebench.org",\n    "X-Title": "FreeBench",\n  }`
       : '';
 
   const openRouterDefaultHeadersPy =
     providerSlug === 'openrouter'
-      ? `,\n    default_headers={"HTTP-Referer": "https://freebench.dev", "X-Title": "FreeBench"}`
+      ? `,\n    default_headers={"HTTP-Referer": "https://freebench.org", "X-Title": "FreeBench"}`
       : '';
 
   return [

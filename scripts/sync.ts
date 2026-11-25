@@ -28,6 +28,7 @@ import {
   resolveEffectiveLimits,
 } from '@/lib/providers/limits';
 import { getProvidersConfig, type ProviderPollResult, type ProviderSlug } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 import {
   dispatchAvailabilityEvents,
   dispatchKeyExpiredAlerts,
@@ -877,7 +878,7 @@ async function main(): Promise<void> {
 
     // 4. Upsert pulse items + deterministic FreeBench event URLs
     const pulseRows = [...pulseAggregate.items];
-    const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench.dev').replace(/\/$/, '');
+    const siteUrl = getSiteUrl();
     for (const evt of pendingEvents.slice(0, 5)) {
       const url = `${siteUrl}/models/${encodeURIComponent(
         evt.canonical_id

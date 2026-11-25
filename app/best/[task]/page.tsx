@@ -18,6 +18,7 @@ import { formatContextWindow, formatRelativeTime, formatScore } from '@/lib/form
 import type { LeaderboardFilterState, SortCategory } from '@/lib/leaderboard/url-state';
 import { sortProviderOfferings } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
+import { getSiteUrl } from '@/lib/site';
 import type { LeaderboardModel } from '@/lib/supabase/types';
 
 export const revalidate = 21600;
@@ -148,7 +149,7 @@ export default async function BestTaskPage({
   const topPick = ranked[0];
   const taskView = getTaskViewConfig(def.slug);
   const agentPortals = def.slug === 'agentic-coding' ? getAgentPortals() : [];
-  const siteUrl = process.env.SITE_URL?.trim() || 'https://freebench.dev';
+  const siteUrl = getSiteUrl();
 
   const itemListJsonLd = {
     '@context': 'https://schema.org',

@@ -1,4 +1,5 @@
 import { getChangelogEvents, getPulsePageData } from '@/lib/data/queries';
+import { getSiteUrl } from '@/lib/site';
 
 function escapeXml(value: string): string {
   return value
@@ -10,7 +11,7 @@ function escapeXml(value: string): string {
 }
 
 export async function GET(request: Request) {
-  const siteUrl = (process.env.SITE_URL?.trim() || 'https://freebench.dev').replace(/\/$/, '');
+  const siteUrl = getSiteUrl();
   const params = new URL(request.url).searchParams;
   const providerFilter = params
     .get('provider')

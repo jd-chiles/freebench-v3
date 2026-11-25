@@ -268,7 +268,12 @@ export async function getModelById(canonicalId: string): Promise<{
   isDemoData: boolean;
 }> {
   const { models, latestSync, isDemoData } = await getLeaderboardData();
-  const decoded = decodeURIComponent(canonicalId);
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(canonicalId);
+  } catch {
+    return { model: null, latestSync, isDemoData };
+  }
   const model = models.find((m) => m.canonical_id === decoded) ?? null;
   return { model, latestSync, isDemoData };
 }

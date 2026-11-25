@@ -11,7 +11,7 @@ function loadOfflineModels(): LeaderboardModel[] {
 }
 
 async function getLiveOrSeedModels(): Promise<LeaderboardModel[]> {
-  const baseUrl = (process.env.FREEBENCH_API_URL?.trim() || 'https://freebench.dev').replace(
+  const baseUrl = (process.env.FREEBENCH_API_URL?.trim() || 'https://freebench.org').replace(
     /\/$/,
     ''
   );

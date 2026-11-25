@@ -1,9 +1,18 @@
 import { ImageResponse } from 'next/og';
 import { getModelById } from '@/lib/data/queries';
 import { formatContextWindow, formatScore } from '@/lib/format';
+import { sortProviderOfferings } from '@/lib/providers/limits';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 export default async function ModelOgImage({
   params,
@@ -13,12 +22,13 @@ export default async function ModelOgImage({
   const { canonicalId } = await params;
   const { model } = await getModelById(canonicalId);
 
-  const title = model?.display_name ?? decodeURIComponent(canonicalId);
+  const title = model?.display_name ?? safeDecode(canonicalId);
   const composite = formatScore(model?.freebench_score);
   const agentic = formatScore(model?.agentic_coding_score);
   const context = formatContextWindow(model?.context_window);
   const providerList =
-    model?.providers.map((p) => p.provider_slug).join(' · ') || 'Free API providers';
+    (model ? sortProviderOfferings(model.providers).map((p) => p.provider_slug).join(' · ') : '') ||
+    'Free API providers';
 
   return new ImageResponse(
     (
