@@ -22,6 +22,8 @@ export type SortKey =
   | 'swebench_verified'
   | 'context_window';
 
+export type LeaderboardScope = 'ranked' | 'unranked' | 'all';
+
 export interface LeaderboardFilterState {
   query: string;
   alwaysFreeOnly: boolean;
@@ -34,6 +36,8 @@ export interface LeaderboardFilterState {
   minContext: number;
   selectedProviders: ProviderSlug[];
   category: SortCategory;
+  scope: LeaderboardScope;
+  showLegacy: boolean;
 }
 
 export const DEFAULT_SORT_BY_CATEGORY: Record<SortCategory, SortKey> = {
@@ -84,6 +88,8 @@ export function createDefaultFilters(
     minContext: 0,
     selectedProviders: [],
     category: initialCategory,
+    scope: 'ranked',
+    showLegacy: false,
     ...overrides,
   };
 }
@@ -138,6 +144,13 @@ export function parseLeaderboardSearchParams(
       minContext: Number.isFinite(parsedCtx) && parsedCtx >= 0 ? parsedCtx : 0,
       selectedProviders,
       category,
+      scope:
+        params.get('view') === 'unranked' || params.get('view') === 'all' || params.get('view') === 'ranked'
+          ? (params.get('view') as LeaderboardScope)
+          : defaults.filters.scope,
+      showLegacy: params.has('legacy')
+        ? params.get('legacy') === '1'
+        : defaults.filters.showLegacy,
     },
     sortKey,
     sortAsc,
@@ -173,6 +186,10 @@ export function serializeLeaderboardSearchParams(
   if (filters.minContext > 0) params.set('ctx', String(filters.minContext));
   if (filters.selectedProviders.length > 0) {
     params.set('providers', filters.selectedProviders.join(','));
+  }
+  if (filters.scope !== defaults.filters.scope) params.set('view', filters.scope);
+  if (filters.showLegacy !== defaults.filters.showLegacy) {
+    params.set('legacy', filters.showLegacy ? '1' : '0');
   }
 
   return params.toString();

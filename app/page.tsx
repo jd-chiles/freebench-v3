@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Radio, Sparkles, Terminal } from 'lucide-react';
+import { ArrowRight, Layers, Radio, ShieldCheck, Sparkles, Terminal } from 'lucide-react';
 import { JsonLd } from '@/components/JsonLd';
 import { SponsorSlot } from '@/components/SponsorSlot';
 import { LeaderboardClient } from '@/components/leaderboard/LeaderboardClient';
 import { getLeaderboardData, TASK_DEFINITIONS } from '@/lib/data/queries';
-import { formatRelativeTime } from '@/lib/format';
+import { formatContextWindow, formatRelativeTime } from '@/lib/format';
 import { sortProviderOfferings } from '@/lib/providers/limits';
 import { getProvidersConfig } from '@/lib/providers/types';
 import { getSiteUrl } from '@/lib/site';
@@ -16,6 +16,15 @@ export const revalidate = 21600;
 function pickBestAlwaysFreeProvider(model: LeaderboardModel): ProviderOffering | undefined {
   const sorted = sortProviderOfferings(model.providers);
   return sorted.find((p) => p.tier_type === 'always_free') ?? sorted[0];
+}
+
+function sortedZeroTrainingProvider(model: LeaderboardModel): ProviderOffering | undefined {
+  const sorted = sortProviderOfferings(model.providers);
+  return (
+    sorted.find((p) => p.tier_type === 'always_free' && !p.trains_on_data) ??
+    sorted.find((p) => !p.trains_on_data) ??
+    sorted[0]
+  );
 }
 
 export default async function HomePage() {
@@ -42,6 +51,31 @@ export default async function HomePage() {
   const topAgentic =
     agenticRanked.find((m) => m.benchmark_coverage >= 2) ?? agenticRanked[0];
   const topAgenticProvider = topAgentic ? pickBestAlwaysFreeProvider(topAgentic) : undefined;
+
+  const longContextRanked = [...models]
+    .filter(
+      (m) =>
+        (m.context_window ?? 0) >= 1_000_000 &&
+        m.providers.some((p) => p.tier_type === 'always_free')
+    )
+    .sort(
+      (a, b) =>
+        (b.freebench_score ?? -1) - (a.freebench_score ?? -1) ||
+        (b.context_window ?? 0) - (a.context_window ?? 0)
+    );
+  const topLongContext = longContextRanked[0];
+  const topLongContextProvider = topLongContext
+    ? pickBestAlwaysFreeProvider(topLongContext)
+    : undefined;
+
+  const zeroTrainingRanked = [...models]
+    .filter((m) => m.providers.some((p) => p.tier_type === 'always_free' && !p.trains_on_data))
+    .sort((a, b) => (b.freebench_score ?? -1) - (a.freebench_score ?? -1));
+  const topZeroTraining =
+    zeroTrainingRanked.find((m) => m.benchmark_coverage >= 2) ?? zeroTrainingRanked[0];
+  const topZeroTrainingProvider = topZeroTraining
+    ? sortedZeroTrainingProvider(topZeroTraining)
+    : undefined;
 
   const latestPulseItem = recentPulse[0];
   const siteUrl = getSiteUrl();
@@ -139,6 +173,54 @@ export default async function HomePage() {
                   {topAgentic.agentic_coding_score?.toFixed(1) ?? '—'} ·{' '}
                   {topAgenticProvider
                     ? providersConfig[topAgenticProvider.provider_slug].display_name.replace(
+                        ' (Free)',
+                        ''
+                      )
+                    : 'Live'}
+                </div>
+              </Link>
+            ) : null}
+
+            {topLongContext ? (
+              <Link
+                href={`/models/${encodeURIComponent(topLongContext.canonical_id)}`}
+                className="rounded-lg border border-zinc-800 bg-zinc-900/75 p-3 transition-colors hover:border-violet-500/50"
+              >
+                <div className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-violet-400">
+                  <Layers className="h-3 w-3" />
+                  <span>#1 1M+ Context</span>
+                </div>
+                <div className="mt-0.5 truncate text-sm font-semibold text-zinc-100">
+                  {topLongContext.display_name}
+                </div>
+                <div className="mt-0.5 truncate font-mono text-[11px] text-zinc-400">
+                  {formatContextWindow(topLongContext.context_window)} ·{' '}
+                  {topLongContextProvider
+                    ? providersConfig[topLongContextProvider.provider_slug].display_name.replace(
+                        ' (Free)',
+                        ''
+                      )
+                    : 'Live'}
+                </div>
+              </Link>
+            ) : null}
+
+            {topZeroTraining ? (
+              <Link
+                href={`/models/${encodeURIComponent(topZeroTraining.canonical_id)}`}
+                className="rounded-lg border border-zinc-800 bg-zinc-900/75 p-3 transition-colors hover:border-emerald-500/50"
+              >
+                <div className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-emerald-300">
+                  <ShieldCheck className="h-3 w-3" />
+                  <span>#1 Zero-Training</span>
+                </div>
+                <div className="mt-0.5 truncate text-sm font-semibold text-zinc-100">
+                  {topZeroTraining.display_name}
+                </div>
+                <div className="mt-0.5 truncate font-mono text-[11px] text-zinc-400">
+                  {topZeroTraining.freebench_score?.toFixed(1) ?? 'Unranked'} ·{' '}
+                  {topZeroTrainingProvider
+                    ? providersConfig[topZeroTrainingProvider.provider_slug].display_name.replace(
                         ' (Free)',
                         ''
                       )

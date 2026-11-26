@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Bookmark, ExternalLink, ShieldAlert, ShieldCheck, X } from 'lucide-react';
+import { Bookmark, Compass, ExternalLink, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import { CopyButton } from '@/components/CopyButton';
 import { EndpointHealthBadge } from '@/components/EndpointHealthBadge';
 import { MethodologyModal } from '@/components/MethodologyModal';
@@ -12,6 +12,11 @@ import { ScoreBar } from '@/components/ScoreBar';
 import { SessionViabilityBadge } from '@/components/SessionViabilityBadge';
 import { SnippetPanel } from '@/components/SnippetPanel';
 import { formatContextWindow, formatScore } from '@/lib/format';
+import {
+  getPrimaryLimitsSummary,
+  getUnrankedReason,
+  isRankedModel,
+} from '@/lib/leaderboard/display';
 import {
   computeSessionViability,
   formatCompactNumber,
@@ -159,6 +164,42 @@ export function ModelDetailDrawer({
           </div>
         </div>
 
+        {/* Top Quick-Use Card */}
+        {sortedProviders[0] ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400">
+                  Best Free Route
+                </span>
+                <span className="text-xs font-semibold text-zinc-100">
+                  {providersConfig[sortedProviders[0].provider_slug].display_name}
+                </span>
+                <SessionViabilityBadge
+                  viability={computeSessionViability(sortedProviders[0])}
+                  compact
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-zinc-300">
+                <code className="max-w-[240px] truncate rounded bg-zinc-950 px-1.5 py-0.5 text-zinc-200">
+                  {sortedProviders[0].provider_model_id}
+                </code>
+                <CopyButton text={sortedProviders[0].provider_model_id} label="Copy ID" />
+                <span className="text-zinc-400">· {getPrimaryLimitsSummary(sortedProviders[0])}</span>
+              </div>
+            </div>
+            <a
+              href={sortedProviders[0].signup_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/25"
+            >
+              <span>API Key</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        ) : null}
+
         {/* Benchmark breakdown */}
         <section className="mt-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -167,60 +208,100 @@ export function ModelDetailDrawer({
             </h3>
             <MethodologyModal />
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">FreeBench Composite</div>
-              <div className="mt-1">
-                <ScoreBar value={model.freebench_score} accent="emerald" />
-              </div>
-            </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">Agentic Coding</div>
-              <div className="mt-1">
-                <ScoreBar value={model.agentic_coding_score} accent="cyan" />
-              </div>
-            </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">BFCL Tool Calling</div>
-              <div className="mt-1">
-                <ScoreBar value={model.bfcl_overall} accent="amber" />
-              </div>
-            </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">Epoch ECI (Raw)</div>
-              <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
-                {formatScore(model.eci_score)}
-              </div>
-            </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">LiveBench Coding</div>
-              <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
-                {formatScore(model.livebench_coding)}
-              </div>
-            </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-              <div className="text-[11px] text-zinc-400">LiveBench Reasoning / Math</div>
-              <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
-                {formatScore(model.livebench_reasoning)} / {formatScore(model.livebench_math)}
-              </div>
-            </div>
-            {typeof model.swebench_verified === 'number' ? (
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="text-[11px] text-zinc-400">SWE-bench Verified</div>
-                <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
-                  {formatScore(model.swebench_verified)}%
+
+          {!isRankedModel(model) ? (
+            <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-100">
+              <Compass className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+              <div className="space-y-1">
+                <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-amber-300">
+                  {getUnrankedReason(model).badge}
                 </div>
+                <p className="text-zinc-200">{getUnrankedReason(model).detail}</p>
               </div>
-            ) : null}
-            {typeof model.aider_polyglot === 'number' ? (
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="text-[11px] text-zinc-400">Aider Polyglot</div>
-                <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
-                  {formatScore(model.aider_polyglot)}%
-                </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {model.freebench_score !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">FreeBench Composite</div>
+                    <div className="mt-1">
+                      <ScoreBar value={model.freebench_score} accent="emerald" />
+                    </div>
+                  </div>
+                ) : null}
+                {model.agentic_coding_score !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">Agentic Coding</div>
+                    <div className="mt-1">
+                      <ScoreBar value={model.agentic_coding_score} accent="cyan" />
+                    </div>
+                  </div>
+                ) : null}
+                {model.bfcl_overall !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">BFCL Tool Calling</div>
+                    <div className="mt-1">
+                      <ScoreBar value={model.bfcl_overall} accent="amber" />
+                    </div>
+                  </div>
+                ) : null}
+                {model.eci_score !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">Epoch ECI (Raw)</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+                      {formatScore(model.eci_score)}
+                    </div>
+                  </div>
+                ) : null}
+                {model.livebench_coding !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">LiveBench Coding</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+                      {formatScore(model.livebench_coding)}
+                    </div>
+                  </div>
+                ) : null}
+                {model.livebench_reasoning !== null || model.livebench_math !== null ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">LiveBench Reasoning / Math</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+                      {formatScore(model.livebench_reasoning)} / {formatScore(model.livebench_math)}
+                    </div>
+                  </div>
+                ) : null}
+                {typeof model.swebench_verified === 'number' ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">SWE-bench Verified</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+                      {formatScore(model.swebench_verified)}%
+                    </div>
+                  </div>
+                ) : null}
+                {typeof model.aider_polyglot === 'number' ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <div className="text-[11px] text-zinc-400">Aider Polyglot</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+                      {formatScore(model.aider_polyglot)}%
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
+
+              {model.benchmark_coverage < 3 ? (
+                <p className="font-mono text-[11px] text-zinc-400">
+                  Awaiting:{' '}
+                  {[
+                    model.eci_score === null ? 'Epoch ECI' : null,
+                    model.livebench_global === null ? 'LiveBench' : null,
+                    model.bfcl_overall === null ? 'BFCL' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+              ) : null}
+            </>
+          )}
         </section>
 
         {/* Free Providers Matrix */}

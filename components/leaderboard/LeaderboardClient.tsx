@@ -14,11 +14,17 @@ import {
 import { CopyButton } from '@/components/CopyButton';
 import { trackEvent } from '@/lib/analytics/track';
 import {
+  isLegacyOrTinyModel,
+  isRankedModel,
+  matchesLeaderboardScope,
+} from '@/lib/leaderboard/display';
+import {
   createDefaultFilters,
   DEFAULT_SORT_BY_CATEGORY,
   parseLeaderboardSearchParams,
   serializeLeaderboardSearchParams,
   type LeaderboardFilterState,
+  type LeaderboardScope,
   type SortCategory,
   type SortKey,
 } from '@/lib/leaderboard/url-state';
@@ -80,6 +86,7 @@ export function LeaderboardClient({
   const [pinnedStack, setPinnedStack] = useState<PinnedStackItem[]>([]);
   const [activeModelId, setActiveModelId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [tableViewMode, setTableViewMode] = useState<'smart' | 'raw'>('smart');
   const hasMountedRef = useRef(false);
 
   useEffect(() => {
@@ -169,10 +176,17 @@ export function LeaderboardClient({
     )}&type=drops`;
   }, [pinnedStack]);
 
-  const filteredModels = useMemo(() => {
+  const {
+    filteredModels,
+    rankedCount,
+    unrankedCount,
+    hiddenLegacyCount,
+    effectiveScope,
+  } = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
+    let legacyHidden = 0;
 
-    const mapped = models
+    const base = models
       .map((model) => {
         const compliantProviders = model.providers.filter((p) => {
           if (filters.alwaysFreeOnly && p.tier_type !== 'always_free') return false;
@@ -220,20 +234,40 @@ export function LeaderboardClient({
             .join(' ')
             .toLowerCase();
           if (!hay.includes(query)) return false;
+        } else if (!filters.showLegacy && isLegacyOrTinyModel(model)) {
+          legacyHidden += 1;
+          return false;
         }
         return true;
       });
 
-    mapped.sort((a, b) => {
+    const ranked = base.filter(isRankedModel).length;
+    const unranked = base.length - ranked;
+    const nextScope: LeaderboardScope = query ? 'all' : filters.scope;
+    const scoped = base.filter((model) => matchesLeaderboardScope(model, nextScope));
+
+    scoped.sort((a, b) => {
       const aVal = a[sortKey] ?? null;
       const bVal = b[sortKey] ?? null;
-      if (aVal === null && bVal === null) return a.display_name.localeCompare(b.display_name);
+      if (aVal === null && bVal === null) {
+        return (
+          b.active_provider_count - a.active_provider_count ||
+          (b.context_window ?? 0) - (a.context_window ?? 0) ||
+          a.display_name.localeCompare(b.display_name)
+        );
+      }
       if (aVal === null) return 1;
       if (bVal === null) return -1;
       return sortAsc ? aVal - bVal : bVal - aVal;
     });
 
-    return mapped;
+    return {
+      filteredModels: scoped,
+      rankedCount: ranked,
+      unrankedCount: unranked,
+      hiddenLegacyCount: legacyHidden,
+      effectiveScope: nextScope,
+    };
   }, [models, filters, sortKey, sortAsc, myKeysSet, providersConfig]);
 
   const activeModel = useMemo(
@@ -359,6 +393,15 @@ export function LeaderboardClient({
         pinnedIds={pinnedIds}
         onTogglePin={handleTogglePin}
         onResetFilters={handleResetFilters}
+        scope={effectiveScope}
+        onChangeScope={(nextScope) => handleFilterChange({ ...filters, scope: nextScope })}
+        rankedCount={rankedCount}
+        unrankedCount={unrankedCount}
+        showLegacy={filters.showLegacy}
+        hiddenLegacyCount={hiddenLegacyCount}
+        onToggleLegacy={() => handleFilterChange({ ...filters, showLegacy: !filters.showLegacy })}
+        tableViewMode={tableViewMode}
+        onChangeTableViewMode={setTableViewMode}
       />
 
       {/* Sticky Compare Tray */}

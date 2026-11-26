@@ -172,17 +172,69 @@ export function FilterBar({
     onChange(createDefaultFilters(defaultCategory));
   }
 
-  const hasActiveFilters =
-    filters.query.trim().length > 0 ||
-    filters.alwaysFreeOnly ||
-    filters.directApiOnly ||
-    filters.zeroTrainingOnly ||
-    filters.toolsOnly ||
-    filters.visionOnly ||
-    filters.openWeightsOnly ||
-    filters.myKeysOnly ||
-    filters.minContext > 0 ||
-    filters.selectedProviders.length > 0;
+  const activeFilterCount = [
+    filters.query.trim().length > 0,
+    filters.alwaysFreeOnly,
+    filters.directApiOnly,
+    filters.zeroTrainingOnly,
+    filters.toolsOnly,
+    filters.visionOnly,
+    filters.openWeightsOnly,
+    filters.myKeysOnly,
+    filters.minContext > 0,
+    filters.selectedProviders.length > 0,
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFilterCount > 0;
+
+  const isAgenticPreset =
+    filters.category === 'agentic' && filters.toolsOnly && filters.alwaysFreeOnly;
+  const isPrivatePreset =
+    filters.directApiOnly && filters.zeroTrainingOnly && filters.alwaysFreeOnly;
+  const isLongContextPreset = filters.minContext >= 1_000_000;
+
+  function toggleAgenticPreset() {
+    if (isAgenticPreset) {
+      onChange({
+        ...filters,
+        category: defaultCategory,
+        toolsOnly: false,
+        alwaysFreeOnly: false,
+      });
+    } else {
+      onChange({
+        ...filters,
+        category: 'agentic',
+        toolsOnly: true,
+        alwaysFreeOnly: true,
+      });
+    }
+  }
+
+  function togglePrivatePreset() {
+    if (isPrivatePreset) {
+      onChange({
+        ...filters,
+        directApiOnly: false,
+        zeroTrainingOnly: false,
+        alwaysFreeOnly: false,
+      });
+    } else {
+      onChange({
+        ...filters,
+        directApiOnly: true,
+        zeroTrainingOnly: true,
+        alwaysFreeOnly: true,
+      });
+    }
+  }
+
+  function toggleLongContextPreset() {
+    onChange({
+      ...filters,
+      minContext: isLongContextPreset ? 0 : 1_000_000,
+    });
+  }
 
   return (
     <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
@@ -218,10 +270,53 @@ export function FilterBar({
               className="inline-flex items-center gap-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100"
             >
               <X className="h-3.5 w-3.5" />
-              <span>Reset</span>
+              <span>Reset ({activeFilterCount})</span>
             </button>
           ) : null}
         </div>
+      </div>
+
+      {/* Quick Presets */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+          Quick presets:
+        </span>
+        <button
+          type="button"
+          onClick={toggleAgenticPreset}
+          aria-pressed={isAgenticPreset}
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+            isAgenticPreset
+              ? 'border-cyan-500/60 bg-cyan-500/15 text-cyan-200'
+              : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'
+          }`}
+        >
+          Agentic Ready
+        </button>
+        <button
+          type="button"
+          onClick={togglePrivatePreset}
+          aria-pressed={isPrivatePreset}
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+            isPrivatePreset
+              ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-200'
+              : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'
+          }`}
+        >
+          Private Direct API
+        </button>
+        <button
+          type="button"
+          onClick={toggleLongContextPreset}
+          aria-pressed={isLongContextPreset}
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+            isLongContextPreset
+              ? 'border-violet-500/60 bg-violet-500/15 text-violet-200'
+              : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'
+          }`}
+        >
+          1M+ Context
+        </button>
       </div>
 
       {/* Middle row: Search + Capability/Privacy toggles */}
